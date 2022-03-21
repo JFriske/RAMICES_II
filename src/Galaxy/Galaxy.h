@@ -19,8 +19,8 @@ class Galaxy
 		void Evolve();
 		void SynthesiseObservations();
 		std::vector<Ring> Rings;
-	private:
-		
+
+	protected:
 		std::vector<std::thread> Threads;
 		std::vector<MigrationMatrix> Migrator;
 		GasReservoir IGM;

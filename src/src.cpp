@@ -5,6 +5,7 @@
 #include "Parameters/GlobalParameters.h"
 #include "Parameters/InitialisedData.h"
 #include "Galaxy/Galaxy.h"
+#include "Galaxy/NuclearDisk.h"
 
 GlobalParameters Params;
 
@@ -53,7 +54,9 @@ int main(int argc, char** argv)
 	InitialisedData Data(Params);
 	
 	//~ initialise main galaxy object
-	Galaxy g = Galaxy(Data);
+	//Galaxy g = Galaxy(Data);
+	NuclearDisk g = NuclearDisk(Data);
+
 	int n = Params.Galaxy.RingCount;
 	
 	double fraction = 1e-3;

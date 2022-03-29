@@ -1,4 +1,5 @@
 #include "NuclearDisk.h"
+
 //#include "JSL.h"
 
 //#include <string>
@@ -48,31 +49,32 @@ void NuclearDisk::Evolve()
 
 	Data.UrgentLog("\tStarting Nuclear Disk evolution: ");
 
-	Data.UrgentLog("before getBarInflow");
 	getBarInflow();
+	Data.UrgentLog("after getBarInflow");
 
 	int finalStep = Param.Meta.SimulationSteps - 1; // intentionally offset by 1!
 
 	for (int timestep = 0; timestep < finalStep; ++timestep)
 	{
-		//~ std::cout << "Time " << timestep << std::endl
+		//std::cout << "Time " << timestep << std::endl;
 
 		updateBarInflowResevoir(timestep);
 
-		Infall(t);
+		Infall(t, timestep);
 
-		//~ std::cout << "Computing scattering" << std::endl;
+		//std::cout << "Computing scattering" << std::endl;
 		ComputeScattering(timestep);
 
-		//~ std::cout << "Computing rngs" << std::endl;
+
+		// std::cout << "Computing rngs" << std::endl;
 		LaunchParallelOperation(timestep, Rings.size(), RingStep);
 
-		//~ std::cout << "Computing scattering pt 2" << std::endl;
+		// std::cout << "Computing scattering pt 2" << std::endl;
 		if (timestep < finalStep)
 		{
 			LaunchParallelOperation(timestep, Rings.size(), Scattering);
 			ScatterGas(timestep);
-		}
+		}	
 
 		//~ std::cout << "Computing savestate" << std::endl;
 
@@ -82,36 +84,123 @@ void NuclearDisk::Evolve()
 	}
 }
 
-// /*rewrite Infall so more gas is funneled onto Nuclear Disk than by classical onfall*/
-// void Infall(double t){
-// 	std::cout <<"hi";
-// }
+/*rewrite Infall so more gas is funneled onto Nuclear Disk than by classical onfall*/
 
-/*take the first line from coldBarInflow and create a resevoir from that
-take the first line from hot...
-use those to do create the GasResevoir IGM
-put in: hotGasLoss, coldGasLoss
-delete the first lines
-*/
-void NuclearDisk::updateBarInflowResevoir(double timestep)
+void NuclearDisk::Infall(double t, int timestep)
+{	
+	double pi = 3.141592654;
+	double Rd = GasScaleLength(t);
+	double oldGas = ColdGasMass();
+	double predictedInfall = InfallMass(timestep);
+
+	double newGas = oldGas + predictedInfall;
+
+	std::vector<double> origMass(Rings.size(), 0.0);
+	std::vector<double> perfectMasses(Rings.size(), 0.0);
+	std::vector<double> perfectDeltas(Rings.size(), 0.0);
+	bool perfect = true;
+	double perf = 0;
+	for (int i = 0; i < Rings.size(); ++i)
+	{
+		Rings[i].MetCheck("Whilst infall computed");
+		double r = Rings[i].Radius;
+		double w = Rings[i].Width;
+		origMass[i] = Rings[i].Gas.ColdMass();
+		double sigma = PredictSurfaceDensity(r, w, newGas, Rd);
+		double newMass = sigma * 2.0 * pi * r * w;
+		perfectMasses[i] = newMass;
+		perfectDeltas[i] = newMass - Rings[i].Gas.ColdMass();
+		if (perfectDeltas[i] < 0)
+		{
+			perfect = false;
+		}
+		perf += newMass;
+	}
+	std::vector<double> realDeltas(Rings.size(), 0.0);
+	if (perfect)
+	{
+		realDeltas = perfectDeltas;
+	}
+	else
+	{
+		realDeltas = IterativeFit(perfectDeltas, predictedInfall);
+	}
+	for (int i = 0; i < Rings.size(); ++i)
+	{
+		double target = origMass[i] + realDeltas[i];
+		double required = target - Rings[i].Gas.ColdMass(); // reocmpute mass to account for mass dragged through disc
+		InsertInfallingGas(i, required);
+
+		//~ Rings[i].MetCheck("After Infall applied " + std::to_string(required));
+		RingMasses[i] = Rings[i].Mass();
+	}
+}
+
+//accretion in the begining -> what to do with ring 0?
+double NuclearDisk::InfallMass(int timestep)
 {
+	//qq
+	// if (timestep <= 100){
+	// 	return 0;
+	// }
+	double accretedInflow = IGM.ColdMass()*(1.0 - Param.NuclearDisk.ColdGasTransportLoss) + IGM.HotMass()*(1.0-Param.NuclearDisk.HotGasTransportLoss);
+	
+	double coldbarmass = 0;
+	for (int i = 0; i < ProcessCount; ++i){
+		for (int e = 0; e < ElementCount; ++e){
+			coldbarmass += hotBarInflow[timestep][i][e];
+		}
+	}
+
+	//std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << IGM.ColdMass()<< ' ' << IGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
+	return accretedInflow/timestepsPerRing[timestep];
+}
+
+/*put in: hotGasLoss, coldGasLoss
+ */
+void NuclearDisk::updateBarInflowResevoir(int timestep)
+{
+	IGM.Wipe();
+
+	for (int i = 0; i < Rings.size(); ++i)
+	{
+		//IGM.Absorb(Rings[i].IGMBuffer);
+		Rings[i].IGMBuffer.Wipe();
+	}
+
 
 	for (int p = 0; p < ProcessCount; ++p)
-	{	
-		for(int i = 0; i< ElementCount;++i){
-			coldBarInflow[timestep][p][i] *=10 ;
-		}
+	{
+		// for (int i = 0; i < ElementCount; ++i)
+		// {
+		// 	coldBarInflow[timestep][p][i] *= 10;
+		// }
+
+		//GasReservoir dummy = GasReservoir();
+
+		
 
 		Gas coldGas = Gas(coldBarInflow[timestep][p]);
 		Gas hotGas = Gas(hotBarInflow[timestep][p]);
 
-		GasStream processGasStream = GasStream((SourceProcess)p, hotGas, coldGas);
-		//GasReservoir barInflow = GasReservoir(param)
-		IGM[(SourceProcess)p] = processGasStream;
-		//qq why does gas resevoir have a Paramsobject that is not initialised?
+		SourceProcess source = (SourceProcess)p;
+
+		GasStream processGasStream = GasStream(source, hotGas, coldGas);
+
+		IGM[source].Absorb(processGasStream);
+
+
+		// qq why does gas resevoir have a Paramsobject that is not initialised?
 	}
+
+	double elemmass = 0;
+	for (int e = 0; e<ElementCount; ++e){
+		elemmass += coldBarInflow[timestep][0][e];
+	}
+		//std::cout << "IGM "<<IGM[(SourceProcess)(0)].ColdMass()<< ' ' << IGM.ColdMass()<< ' ' << elemmass<<std::endl;
 }
 
+// Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes
 std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std::string> stringVector)
 {
 	std::vector<std::vector<double>> processVectors;
@@ -122,13 +211,51 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 	std::transform(stringVector.begin(), stringVector.end(), doubleVector.begin(), [](std::string const &val)
 				   { return std::stod(val); });
 
-	//throw away first stream giving total abundance and then separate into vectors according to source processes
+	// throw away first stream giving total abundance and then separate into vectors according to source processes
 	for (int p = 0; p < ProcessCount; ++p)
 	{
-		processVectors.push_back(std::vector<double>(doubleVector.begin() + (p+1) * ElementCount, doubleVector.begin() + (p + 2) * ElementCount));
+		processVectors.push_back(std::vector<double>(doubleVector.begin() + (p + 1) * ElementCount, doubleVector.begin() + (p + 2) * ElementCount));
 	}
 
 	return processVectors;
+}
+
+// linear growth of the bar with a initialisiation time period of rapid growth and subsequent slow growth
+std::vector<int> NuclearDisk::barGrowthFunction()
+{
+	std::vector<int> barLengthInRings(Param.Meta.SimulationSteps );
+
+	for (int timestep = 0; timestep < Param.Meta.SimulationSteps ; ++timestep)
+	{
+		double barLength;
+		double dtime = timestep * Param.Meta.TimeStep;
+
+		// Data.UrgentLog(std::to_string(timestep) + ' ' + std::to_string(dtime) + ' ' + std::to_string(barLengthInRings.size()) +  '\n');
+
+		if (dtime < Param.NuclearDisk.BarGrowthStart)
+		{
+			barLength = 0;
+		}
+		else if (dtime < Param.NuclearDisk.BarGrowthStart + Param.NuclearDisk.BarInitialiseTime)
+		{
+			barLength = (dtime - Param.NuclearDisk.BarGrowthStart) * (Param.NuclearDisk.BarInitialLength / Param.NuclearDisk.BarInitialiseTime);
+		}
+		else
+		{
+			double growthSpeed = (Param.NuclearDisk.BarFinalLength - Param.NuclearDisk.BarInitialLength) / (Param.Meta.SimulationDuration - Param.NuclearDisk.BarGrowthStart - Param.NuclearDisk.BarInitialiseTime);
+			barLength = Param.NuclearDisk.BarInitialLength + (dtime - Param.NuclearDisk.BarGrowthStart - Param.NuclearDisk.BarInitialiseTime) * growthSpeed;
+		}
+
+
+		double ringwidth = Param.NuclearDisk.GalaxyRadius / Param.NuclearDisk.GalaxyRingCount;
+		int ringToEmpty = (int)(barLength / ringwidth);
+
+		barLengthInRings[timestep] = ringToEmpty;
+
+		//std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl; 
+
+	}
+	return barLengthInRings;
 }
 
 void NuclearDisk::getBarInflow()
@@ -136,40 +263,122 @@ void NuclearDisk::getBarInflow()
 	std::string galaxyFileCold = "Output/" + galaxyDir + "/Enrichment_Absolute_ColdGas.dat";
 	std::string galaxyFileHot = "Output/" + galaxyDir + "/Enrichment_Absolute_HotGas.dat";
 
-	Data.UrgentLog(galaxyFileCold+'\n');
+	Data.UrgentLog(galaxyFileCold + '\n');
 
-	int ringToEmpty = 2;
-	//insert function for ring to empty here
+	// std::cout <<Param.Galaxy.Radius << " " << Param.Galaxy.RingCount << " " << Param.Galaxy.RingWidth[5] << "\n";
 
+	std::vector<int> barLengthInRings = barGrowthFunction();
 
+	timestepsPerRing.resize(Param.Meta.SimulationSteps);
+	int sameRingCount = 1;
+	for (int r = 1; r < barLengthInRings.size(); ++r)
+	{
+		// currently very last timestep doesn't accrete
+		if ((barLengthInRings[r] == barLengthInRings[r - 1] )&& (r != barLengthInRings.size() - 1))
+		{
+			++sameRingCount;
+		}
+
+		else if (r == barLengthInRings.size() - 1)
+		{
+			sameRingCount++;
+			for (int incr = r - sameRingCount+1; incr <= r; ++incr)
+			{
+				timestepsPerRing[incr] = sameRingCount;
+			}
+		}
+		else
+		{
+			 //std::cout << r - sameRingCount << ' ' << r << '\n';
+			for (int incr = r - sameRingCount; incr < r; ++incr)
+			{
+				timestepsPerRing[incr] = sameRingCount;
+			}
+			sameRingCount = 1;
+		}
+	}
+
+	// for (int i = 0; i < barLengthInRings.size(); i += 1)
+	// {
+	// 	Data.UrgentLog(std::to_string(i) + ' ' + std::to_string(barLengthInRings[i]) + ' ' + std::to_string(timestepsPerRing[i]) + '\n');
+	// }
+	Data.UrgentLog(std::to_string(Param.Meta.SimulationSteps) + " \n ");
+
+	int timestep = 0;
 	forLineVectorIn(
 		galaxyFileCold, ', ',
-		std::string comp = std::to_string(ringToEmpty) + ',';
-			if (FILE_LINE_VECTOR[1] == comp ) {
-				coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
-			}
+		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
+		//std::string comp2 = std::to_string(timestep) + ',';
+		if (FILE_LINE_VECTOR[1] == comp) {
+			//std::cout<< timestep<<' ' <<FILE_LINE_VECTOR[1]<<std::endl;
+			//std::cout << FILE_LINE<<std::endl;
+			coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
+		 ++timestep;
+		}
 		);
 
+	//std::cout<<coldBarInflow[350]
+
+	timestep = 0;
 	forLineVectorIn(
 		galaxyFileHot, ', ',
-		std::string comp = std::to_string(ringToEmpty) + ',';
-			if (FILE_LINE_VECTOR[1] == comp ) {
-				hotBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
-			}
-		);
+		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
+		if (FILE_LINE_VECTOR[1] == comp) {
+			hotBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
+			++timestep;
+		});
 
-
-	for (int i = 0; i < 800; i +=100)
+	for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
 	{
+		Data.UrgentLog(std::to_string(i) + ' ');
 		for (int e = 0; e < ElementCount; ++e)
 		{
 			Data.UrgentLog(std::to_string(coldBarInflow[i][0][e]) + ' ');
+			//std::cout << i << ' '<< coldBarInflow[i][0][e];
 		}
 		// Data.UrgentLog( " tab ");
 		// for (int e = 0; e < ElementCount; ++e)
 		// {
 		// 	Data.UrgentLog(std::to_string(coldBarInflow[i][1][e])+ ' ');
 		// }
-		Data.UrgentLog( " \n ");
+		Data.UrgentLog(" \n ");
 	}
+	Data.UrgentLog("\n");
+		for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
+	{
+		for (int e = 0; e < ElementCount; ++e)
+		{
+			Data.UrgentLog(std::to_string(hotBarInflow[i][0][e]) + ' ');
+			//std::cout << i << ' '<< coldBarInflow[i][0][e];
+		}
+		// Data.UrgentLog( " tab ");
+		// for (int e = 0; e < ElementCount; ++e)
+		// {
+		// 	Data.UrgentLog(std::to_string(coldBarInflow[i][1][e])+ ' ');
+		// }
+		Data.UrgentLog(" \n ");
+	}
+}
+
+double NuclearDisk::GasScaleLength(double t)
+{
+
+	double tdelay = Param.NuclearDisk.BarGrowthStart;
+	double t0 = Param.Galaxy.ScaleLengthDelay;
+	double tg = Param.Galaxy.ScaleLengthTimeScale;
+	double tf = Param.Galaxy.ScaleLengthFinalTime;
+	double R0 = Param.Galaxy.MinScaleLength;
+	double Rf = Param.Galaxy.MaxScaleLength;
+
+	if (t < tdelay)
+	{
+		// std::cout << t << ' ' << R0 <<  ' ' << Param.Meta.TimeStep <<'\n';
+		return R0;
+	}
+
+	double N = 1.0 / (atan((tf - tdelay - t0) / tg) - atan(-t0 / tg));
+
+	// std::cout << t << ' ' <<  R0 + N*(Rf - R0) * (atan( (t -tdelay - t0)/tg) - atan(-t0/tg)) << '\n';
+
+	return R0 + N * (Rf - R0) * (atan((t - tdelay - t0) / tg) - atan(-t0 / tg));
 }

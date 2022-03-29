@@ -75,4 +75,6 @@ class Galaxy
 		double BrightestStar;
 		int ParallelBars = 0;
 		
+
+		std::vector<double> IterativeFit(const std::vector<double> & oldDeltas, const double newMass);
 };

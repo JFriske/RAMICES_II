@@ -21,12 +21,18 @@ class NuclearDisk : public Galaxy
 
 
         void getBarInflow(); 
-        void updateBarInflowResevoir(double timestep);
-        //void Infall(double t);
+        void updateBarInflowResevoir(int timestep);
+        double GasScaleLength(double t);
+        void Infall(double time, int timestep);
+        double InfallMass(int timestep);
+        std::vector<int> barGrowthFunction();
+
 
         std::vector<std::vector<double>> readAndSliceInput(std::vector<std::string> stringVector);
 
         std::vector<std::vector<std::vector<double>>> coldBarInflow;
         std::vector<std::vector<std::vector<double>>> hotBarInflow;
+
+        std::vector<int> timestepsPerRing;
         
 };

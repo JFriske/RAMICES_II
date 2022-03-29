@@ -62,7 +62,8 @@ void neatLog(double value, std::stringstream & stream)
 {
 	if (isinf(value) || isnan(value))
 	{
-		stream << ",-";
+		//qq
+		stream << ", -";
 	}
 	else
 	{
@@ -145,7 +146,7 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 	}
 	
 
-	for (int p = 0; p < ProcessCount + 1; ++p)
+	for (int p = 0; p < ProcessCount + 1; ++p)  
 	{
 		for (int e = 0; e < ElementCount; ++e)
 		{

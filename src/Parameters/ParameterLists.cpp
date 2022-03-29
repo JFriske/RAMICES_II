@@ -149,17 +149,21 @@ void StellarValues::Initialise(std::string resourceRoot)
 	double w = (MaxStellarMass - ImmortalMass)/sumFactor;
 	double x = ImmortalMass;
 	
-	std::cout << "The chosen mass grid is: " << std::endl;
+
+	
+	// std::cout << "The chosen mass grid is: " << std::endl;
 	for (int i = 0; i < MassResolution; ++i)
 	{
-		std::cout <<  x << " -> ";
+		//std::cout <<  x << " -> ";
 		x += w/2;
 		MassGrid[i] = x;
 		MassDeltas[i] = w;
 		x += w/2;
-		std::cout << x << std::endl;	
+		//std::cout << x << std::endl;	
 		w = w * alpha;
 	}
+
+
 	//~ double deltaLogM = (log10(MaxStellarMass) - log10(ImmortalMass))/(MassResolution);
 	//~ double prevM = ImmortalMass;
 	//~ for (int i = 0; i < MassResolution; ++i)

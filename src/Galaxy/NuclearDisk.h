@@ -25,6 +25,8 @@ class NuclearDisk : public Galaxy
         double GasScaleLength(double t);
         void Infall(double time, int timestep);
         double InfallMass(int timestep);
+
+        void checkTimeResolution(std::string galaxyFileCold, std::string  galaxyFileHot );
         std::vector<int> barGrowthFunction();
 
 

@@ -497,20 +497,20 @@ void Galaxy::ScatterYields(int time, int ringstart, int ringend)
 
 			// self absorb fraction
 			double selfAbsorb = migrator[i][i];
-			std::cout << selfAbsorb<< std::endl;
+			//std::cout << selfAbsorb<< std::endl;
 
 			//~ std::cout << "Ring " << i << " is self absorbing " << 100*selfAbsorb << " of " << Rings[i].Stars.YieldsFrom(t)[Remnant].ColdMass() << "originating from " << t <<std::endl;
 
-			// if (i == 0 && t == 0)
-			// {
-			// 	std::cout << "cold mass before ring " << i << " timestep " << time << " " << Rings[i].Gas.ColdMass() << std::endl;
-			// }
+			if (i == 0 && t == 0)
+			{
+				std::cout << "cold mass before ring " << i << " timestep " << time << " " << Rings[i].Gas.ColdMass() << std::endl;
+			}
 			Rings[i].Gas.Absorb(Rings[i].Stars.YieldsFrom(t), absorbFrac * selfAbsorb);
 			//~ std::cout << "Ring " << i << " now has " << Rings[i].Gas[Remnant].ColdMass() << std::endl;
-			// if (i == 0 && t == time)
-			// {
-			// 	std::cout << "cold mass after ring " << i << " timestep " << time << " " << Rings[i].Gas.ColdMass() << std::endl;
-			// }
+			if (i == 0 && t == time)
+			{
+				std::cout << "cold mass after ring " << i << " timestep " << time << " " << Rings[i].Gas.ColdMass() << std::endl;
+			}
 
 			bool dispersionContinues = true;
 			int distance = 1;

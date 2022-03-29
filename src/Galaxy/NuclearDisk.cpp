@@ -56,15 +56,14 @@ void NuclearDisk::Evolve()
 
 	for (int timestep = 0; timestep < finalStep; ++timestep)
 	{
-		//std::cout << "Time " << timestep << std::endl;
+		// std::cout << "Time " << timestep << std::endl;
 
 		updateBarInflowResevoir(timestep);
 
 		Infall(t, timestep);
 
-		//std::cout << "Computing scattering" << std::endl;
+		// std::cout << "Computing scattering" << std::endl;
 		ComputeScattering(timestep);
-
 
 		// std::cout << "Computing rngs" << std::endl;
 		LaunchParallelOperation(timestep, Rings.size(), RingStep);
@@ -74,7 +73,7 @@ void NuclearDisk::Evolve()
 		{
 			LaunchParallelOperation(timestep, Rings.size(), Scattering);
 			ScatterGas(timestep);
-		}	
+		}
 
 		//~ std::cout << "Computing savestate" << std::endl;
 
@@ -87,7 +86,7 @@ void NuclearDisk::Evolve()
 /*rewrite Infall so more gas is funneled onto Nuclear Disk than by classical onfall*/
 
 void NuclearDisk::Infall(double t, int timestep)
-{	
+{
 	double pi = 3.141592654;
 	double Rd = GasScaleLength(t);
 	double oldGas = ColdGasMass();
@@ -136,24 +135,26 @@ void NuclearDisk::Infall(double t, int timestep)
 	}
 }
 
-//accretion in the begining -> what to do with ring 0?
+// accretion in the begining -> what to do with ring 0?
 double NuclearDisk::InfallMass(int timestep)
 {
-	//qq
-	// if (timestep <= 100){
-	// 	return 0;
-	// }
-	double accretedInflow = IGM.ColdMass()*(1.0 - Param.NuclearDisk.ColdGasTransportLoss) + IGM.HotMass()*(1.0-Param.NuclearDisk.HotGasTransportLoss);
-	
+	// qq
+	//  if (timestep <= 100){
+	//  	return 0;
+	//  }
+	double accretedInflow = IGM.ColdMass() * (1.0 - Param.NuclearDisk.ColdGasTransportLoss) + IGM.HotMass() * (1.0 - Param.NuclearDisk.HotGasTransportLoss);
+
 	double coldbarmass = 0;
-	for (int i = 0; i < ProcessCount; ++i){
-		for (int e = 0; e < ElementCount; ++e){
+	for (int i = 0; i < ProcessCount; ++i)
+	{
+		for (int e = 0; e < ElementCount; ++e)
+		{
 			coldbarmass += hotBarInflow[timestep][i][e];
 		}
 	}
 
-	//std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << IGM.ColdMass()<< ' ' << IGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
-	return accretedInflow/timestepsPerRing[timestep];
+	// std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << IGM.ColdMass()<< ' ' << IGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
+	return accretedInflow / timestepsPerRing[timestep];
 }
 
 /*put in: hotGasLoss, coldGasLoss
@@ -164,10 +165,9 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 
 	for (int i = 0; i < Rings.size(); ++i)
 	{
-		//IGM.Absorb(Rings[i].IGMBuffer);
+		// IGM.Absorb(Rings[i].IGMBuffer);
 		Rings[i].IGMBuffer.Wipe();
 	}
-
 
 	for (int p = 0; p < ProcessCount; ++p)
 	{
@@ -176,9 +176,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 		// 	coldBarInflow[timestep][p][i] *= 10;
 		// }
 
-		//GasReservoir dummy = GasReservoir();
-
-		
+		// GasReservoir dummy = GasReservoir();
 
 		Gas coldGas = Gas(coldBarInflow[timestep][p]);
 		Gas hotGas = Gas(hotBarInflow[timestep][p]);
@@ -189,20 +187,21 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 
 		IGM[source].Absorb(processGasStream);
 
-
 		// qq why does gas resevoir have a Paramsobject that is not initialised?
 	}
 
 	double elemmass = 0;
-	for (int e = 0; e<ElementCount; ++e){
+	for (int e = 0; e < ElementCount; ++e)
+	{
 		elemmass += coldBarInflow[timestep][0][e];
 	}
-		//std::cout << "IGM "<<IGM[(SourceProcess)(0)].ColdMass()<< ' ' << IGM.ColdMass()<< ' ' << elemmass<<std::endl;
+	// std::cout << "IGM "<<IGM[(SourceProcess)(0)].ColdMass()<< ' ' << IGM.ColdMass()<< ' ' << elemmass<<std::endl;
 }
 
 // Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes
 std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std::string> stringVector)
 {
+
 	std::vector<std::vector<double>> processVectors;
 
 	stringVector.erase(stringVector.begin(), stringVector.begin() + 3);
@@ -223,9 +222,9 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 // linear growth of the bar with a initialisiation time period of rapid growth and subsequent slow growth
 std::vector<int> NuclearDisk::barGrowthFunction()
 {
-	std::vector<int> barLengthInRings(Param.Meta.SimulationSteps );
+	std::vector<int> barLengthInRings(Param.Meta.SimulationSteps);
 
-	for (int timestep = 0; timestep < Param.Meta.SimulationSteps ; ++timestep)
+	for (int timestep = 0; timestep < Param.Meta.SimulationSteps; ++timestep)
 	{
 		double barLength;
 		double dtime = timestep * Param.Meta.TimeStep;
@@ -246,16 +245,62 @@ std::vector<int> NuclearDisk::barGrowthFunction()
 			barLength = Param.NuclearDisk.BarInitialLength + (dtime - Param.NuclearDisk.BarGrowthStart - Param.NuclearDisk.BarInitialiseTime) * growthSpeed;
 		}
 
-
 		double ringwidth = Param.NuclearDisk.GalaxyRadius / Param.NuclearDisk.GalaxyRingCount;
 		int ringToEmpty = (int)(barLength / ringwidth);
 
 		barLengthInRings[timestep] = ringToEmpty;
 
-		//std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl; 
-
+		// std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl;
 	}
 	return barLengthInRings;
+}
+
+void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string galaxyFileHot){
+	double t0 = 0;
+	int i = 0;
+	forLineVectorIn(
+		galaxyFileCold, ', ',
+		if (i > 0) 
+		{
+			// std::cout << FILE_LINE_VECTOR[0]<<std::endl;
+			double t1 = std::stod(FILE_LINE_VECTOR[0]);
+			// std::cout << t1-t0<< ' ' <<Param.Meta.TimeStep<< ' ' <<(t1-t0) - Param.Meta.TimeStep<<std::endl;
+			if (t1 - t0 > 0.0)
+			{
+				if (std::abs(t1 - t0 - Param.Meta.TimeStep) > 0.0000001)
+				{
+					std::cout << "\n\t The chosen time resolution in the nuclear disk does not fit the input time resolution." << std::endl;
+					exit(5);
+				}
+			}
+			t0 = t1;
+		} 
+		++i;
+	)
+
+	t0 = 0;
+	i = 0;
+	forLineVectorIn(
+		galaxyFileHot, ', ',
+		if (i > 0) 
+		{
+			// std::cout << FILE_LINE_VECTOR[0]<<std::endl;
+			double t1 = std::stod(FILE_LINE_VECTOR[0]);
+			// std::cout << t1-t0<< ' ' <<Param.Meta.TimeStep<< ' ' <<(t1-t0) - Param.Meta.TimeStep<<std::endl;
+			if (t1 - t0 > 0.0)
+			{
+				if (std::abs(t1 - t0 - Param.Meta.TimeStep) > 0.0000001)
+				{
+					std::cout << "\n\t The chosen time resolution in the nuclear disk does not fit the input time resolution." << std::endl;
+					exit(5);
+				}
+			}
+			t0 = t1;
+		} 
+		++i;
+	)
+
+
 }
 
 void NuclearDisk::getBarInflow()
@@ -274,7 +319,7 @@ void NuclearDisk::getBarInflow()
 	for (int r = 1; r < barLengthInRings.size(); ++r)
 	{
 		// currently very last timestep doesn't accrete
-		if ((barLengthInRings[r] == barLengthInRings[r - 1] )&& (r != barLengthInRings.size() - 1))
+		if ((barLengthInRings[r] == barLengthInRings[r - 1]) && (r != barLengthInRings.size() - 1))
 		{
 			++sameRingCount;
 		}
@@ -282,14 +327,14 @@ void NuclearDisk::getBarInflow()
 		else if (r == barLengthInRings.size() - 1)
 		{
 			sameRingCount++;
-			for (int incr = r - sameRingCount+1; incr <= r; ++incr)
+			for (int incr = r - sameRingCount + 1; incr <= r; ++incr)
 			{
 				timestepsPerRing[incr] = sameRingCount;
 			}
 		}
 		else
 		{
-			 //std::cout << r - sameRingCount << ' ' << r << '\n';
+			// std::cout << r - sameRingCount << ' ' << r << '\n';
 			for (int incr = r - sameRingCount; incr < r; ++incr)
 			{
 				timestepsPerRing[incr] = sameRingCount;
@@ -298,26 +343,24 @@ void NuclearDisk::getBarInflow()
 		}
 	}
 
-	// for (int i = 0; i < barLengthInRings.size(); i += 1)
-	// {
-	// 	Data.UrgentLog(std::to_string(i) + ' ' + std::to_string(barLengthInRings[i]) + ' ' + std::to_string(timestepsPerRing[i]) + '\n');
-	// }
-	Data.UrgentLog(std::to_string(Param.Meta.SimulationSteps) + " \n ");
+	// checking whether time resolutions match
+	checkTimeResolution(galaxyFileCold, galaxyFileHot);
 
 	int timestep = 0;
+
 	forLineVectorIn(
 		galaxyFileCold, ', ',
 		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
-		//std::string comp2 = std::to_string(timestep) + ',';
-		if (FILE_LINE_VECTOR[1] == comp) {
-			//std::cout<< timestep<<' ' <<FILE_LINE_VECTOR[1]<<std::endl;
-			//std::cout << FILE_LINE<<std::endl;
-			coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
-		 ++timestep;
-		}
-		);
+		// std::string comp2 = std::to_string(timestep) + ',';
 
-	//std::cout<<coldBarInflow[350]
+		if (FILE_LINE_VECTOR[1] == comp) {
+			// std::cout<< timestep<<' ' <<FILE_LINE_VECTOR[1]<<std::endl;
+			// std::cout << FILE_LINE<<std::endl;
+			coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
+			++timestep;
+		});
+
+	// std::cout<<coldBarInflow[350]
 
 	timestep = 0;
 	forLineVectorIn(
@@ -334,7 +377,7 @@ void NuclearDisk::getBarInflow()
 		for (int e = 0; e < ElementCount; ++e)
 		{
 			Data.UrgentLog(std::to_string(coldBarInflow[i][0][e]) + ' ');
-			//std::cout << i << ' '<< coldBarInflow[i][0][e];
+			// std::cout << i << ' '<< coldBarInflow[i][0][e];
 		}
 		// Data.UrgentLog( " tab ");
 		// for (int e = 0; e < ElementCount; ++e)
@@ -344,12 +387,12 @@ void NuclearDisk::getBarInflow()
 		Data.UrgentLog(" \n ");
 	}
 	Data.UrgentLog("\n");
-		for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
+	for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
 	{
 		for (int e = 0; e < ElementCount; ++e)
 		{
 			Data.UrgentLog(std::to_string(hotBarInflow[i][0][e]) + ' ');
-			//std::cout << i << ' '<< coldBarInflow[i][0][e];
+			// std::cout << i << ' '<< coldBarInflow[i][0][e];
 		}
 		// Data.UrgentLog( " tab ");
 		// for (int e = 0; e < ElementCount; ++e)

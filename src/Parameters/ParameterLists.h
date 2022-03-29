@@ -88,6 +88,8 @@ class OutputValues : public ParamList
 class NuclearDiskValues : public ParamList
 {
 	public:
+		Argument<bool> DoNuclearDisk = Argument<bool>(1, "nuclear-disk-flag");
+
 		Argument<double> BarGrowthStart = Argument<double>(3.5, "bar-start");
 
 		Argument<double> BarInitialiseTime = Argument<double>(0.5, "bar-initialise-time");

@@ -88,7 +88,7 @@ class OutputValues : public ParamList
 class NuclearDiskValues : public ParamList
 {
 	public:
-		Argument<bool> DoNuclearDisk = Argument<bool>(1, "nuclear-disk-flag");
+		Argument<bool> DoNuclearDisk = Argument<bool>(0, "nuclear-disk-flag");
 
 		Argument<double> BarGrowthStart = Argument<double>(3.5, "bar-start");
 
@@ -98,6 +98,8 @@ class NuclearDiskValues : public ParamList
 
 		Argument<double> BarFinalLength = Argument<double>(4.0, "bar-length-final");
 
+		Argument<double> NuclearRingMassFraction = Argument<double>(0.2, "nuc-ring-fraction");
+
 		Argument<double> GalaxyRadius = Argument<double>(20.0, "galaxy-cutoff-radius");
 
 		Argument<int> GalaxyRingCount = Argument<int>(100, "galaxy-ring-number");
@@ -105,6 +107,17 @@ class NuclearDiskValues : public ParamList
 		Argument<double> HotGasTransportLoss = Argument<double>(0.7, "hot-gas-transport-loss");
 
 		Argument<double> ColdGasTransportLoss = Argument<double>(0.5, "cold-gas-transport-loss");
+
+		Argument<double> HotGasLossTimeStep = Argument<double>(0.9, "hot-gas-expelled");
+
+		//!Boring constructor -- slots in the relevant arguments into the ParamList::argPointer array.
+		NuclearDiskValues()
+		{
+			argPointers = {&DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
+		};
+		
+		//! An overload of a normally empty function. Goes through and creates the necessary directory structure 
+		//virtual void Initialise(std::string resourceRoot);
 };
 
 

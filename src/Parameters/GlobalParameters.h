@@ -52,7 +52,7 @@ class GlobalParameters
 		NuclearDiskValues NuclearDisk;
 
 		//! A heterogeneous pointer array, which allows for a nice loop over the members. Any new parameter pack needs to be inserted here so that the member values can be initialised.
-		std::vector<ParamList *> ParamMembers = {&Meta,&Output,&Resources,&Element,&Stellar,&Thermal,&Galaxy,&Yield,&Migration,&Catalogue};
+		std::vector<ParamList *> ParamMembers = {&Meta,&Output,&Resources,&Element,&Stellar,&Thermal,&Galaxy,&Yield,&Migration,&Catalogue, &NuclearDisk};
 		
 		//! Does absolutely nothing!
 		GlobalParameters();

@@ -1,43 +1,5 @@
 #include "NuclearDisk.h"
 
-//#include "JSL.h"
-
-//#include <string>
-
-/*//Nuclear Disk Constructor in Work
-NuclearDisk::NuclearDisk(InitialisedData & data): Data(data), Param(data.Param), IGM(GasReservoir::Primordial(data.Param.Galaxy.IGM_Mass,data.Param))
-{
-	galaxyDir = 'Test';
-
-	int currentRings = 0;
-
-	Data.UrgentLog("\tMain Galaxy Initialised.\n\tStarting ring population:  ");
-
-	double initMass = 0;
-	double initialScaleLength = GasScaleLength(0);
-	RingMasses.resize(Param.Galaxy.RingCount);
-	for (int i = 0; i < Param.Galaxy.RingCount; ++i)
-	{
-		double ri = Param.Galaxy.RingRadius[i];
-		double ringWidth = Param.Galaxy.RingWidth[i];
-		double predictedDensity = PredictSurfaceDensity(ri,ringWidth,Param.Galaxy.PrimordialMass,initialScaleLength);
-		double predictedMass = 2*pi * ri * ringWidth * predictedDensity;
-		Rings.push_back(Ring(i,predictedMass,Data));
-		Data.ProgressBar(currentRings, i,Param.Galaxy.RingCount);
-		initMass += predictedMass;
-	}
-
-	Threads.resize(Param.Meta.ParallelThreads-1);
-	Data.UrgentLog("\tGalaxy Rings initialised.\n");
-
-
-	Migrator = std::vector<MigrationMatrix>(Param.Meta.SimulationSteps,MigrationMatrix(Data));
-	double w = Param.Galaxy.RingWidth[0];
-	double p = Param.Migration.MarkovDispersionStrength * Param.Meta.TimeStep / (w * w);
-	Data.UrgentLog("\tMigration Matrices initialised. Characteristic transition probability: " + std::to_string(p) + "\n");
-}
-*/
-
 // Main Evolution Loop
 void NuclearDisk::Evolve()
 {
@@ -50,8 +12,6 @@ void NuclearDisk::Evolve()
 	Data.UrgentLog("\tStarting Nuclear Disk evolution: ");
 
 	getBarInflow();
-	Data.UrgentLog("after getBarInflow");
-
 	int finalStep = Param.Meta.SimulationSteps - 1; // intentionally offset by 1!
 
 	for (int timestep = 0; timestep < finalStep; ++timestep)
@@ -60,22 +20,33 @@ void NuclearDisk::Evolve()
 
 		updateBarInflowResevoir(timestep);
 
+		//		if (t < 9 || t > 9.5){
+		//std::cout<<'here;'<<std::endl;
 		Infall(t, timestep);
+			//	}
+		
 
 		// std::cout << "Computing scattering" << std::endl;
 		ComputeScattering(timestep);
 
-		// std::cout << "Computing rngs" << std::endl;
+		//std::cout<<"hatgasmass 1 "<<HotGasMass()<<std::endl;
+
+		//  std::cout << "Computing rings" << std::endl;
 		LaunchParallelOperation(timestep, Rings.size(), RingStep);
 
-		// std::cout << "Computing scattering pt 2" << std::endl;
+		//std::cout<<"hatgasmass 2 "<<HotGasMass()<<std::endl;
+		//  std::cout << "Computing scattering pt 2" << std::endl;
 		if (timestep < finalStep)
 		{
 			LaunchParallelOperation(timestep, Rings.size(), Scattering);
 			ScatterGas(timestep);
 		}
 
-		//~ std::cout << "Computing savestate" << std::endl;
+		LoseHotGas();
+
+		//std::cout<<"hatgasmass end "<<HotGasMass()<<std::endl;
+
+		//  std::cout << "Computing savestate" << std::endl;
 
 		Data.ProgressBar(currentBars, timestep, finalStep);
 		SaveState(t);
@@ -92,6 +63,8 @@ void NuclearDisk::Infall(double t, int timestep)
 	double oldGas = ColdGasMass();
 	double predictedInfall = InfallMass(timestep);
 
+	// std::cout << t << ' ' << timestep << ' ' << predictedInfall << ' ' << oldGas << ' ' << predictedInfall / oldGas << std::endl;
+
 	double newGas = oldGas + predictedInfall;
 
 	std::vector<double> origMass(Rings.size(), 0.0);
@@ -99,13 +72,15 @@ void NuclearDisk::Infall(double t, int timestep)
 	std::vector<double> perfectDeltas(Rings.size(), 0.0);
 	bool perfect = true;
 	double perf = 0;
+
+	double exponentialDiskNorm = NormaliseSurfaceDensity(Rd);
 	for (int i = 0; i < Rings.size(); ++i)
 	{
 		Rings[i].MetCheck("Whilst infall computed");
 		double r = Rings[i].Radius;
 		double w = Rings[i].Width;
 		origMass[i] = Rings[i].Gas.ColdMass();
-		double sigma = PredictSurfaceDensity(r, w, newGas, Rd);
+		double sigma = PredictSurfaceDensity(r, w, newGas, Rd, exponentialDiskNorm);
 		double newMass = sigma * 2.0 * pi * r * w;
 		perfectMasses[i] = newMass;
 		perfectDeltas[i] = newMass - Rings[i].Gas.ColdMass();
@@ -135,13 +110,20 @@ void NuclearDisk::Infall(double t, int timestep)
 	}
 }
 
+void NuclearDisk::LoseHotGas()
+{
+	 std::cout <<HotGasMass()<<' ';
+	for (int r = 0; r < Param.Galaxy.RingCount; ++r)
+	{
+		double hotMass = Rings[r].Gas.HotMass();
+		Rings[r].Gas.Deplete(0.0, Param.NuclearDisk.HotGasLossTimeStep * hotMass);
+	}
+	 std::cout<<HotGasMass()<<std::endl;
+}
+
 // accretion in the begining -> what to do with ring 0?
 double NuclearDisk::InfallMass(int timestep)
 {
-	// qq
-	//  if (timestep <= 100){
-	//  	return 0;
-	//  }
 	double accretedInflow = IGM.ColdMass() * (1.0 - Param.NuclearDisk.ColdGasTransportLoss) + IGM.HotMass() * (1.0 - Param.NuclearDisk.HotGasTransportLoss);
 
 	double coldbarmass = 0;
@@ -163,20 +145,17 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 {
 	IGM.Wipe();
 
-	for (int i = 0; i < Rings.size(); ++i)
-	{
-		// IGM.Absorb(Rings[i].IGMBuffer);
-		Rings[i].IGMBuffer.Wipe();
-	}
+	// for (int i = 0; i < Rings.size(); ++i)
+	// {
+	// 	// IGM.Absorb(Rings[i].IGMBuffer);
+	// 	Rings[i].IGMBuffer.Wipe();
+	// }
 
 	for (int p = 0; p < ProcessCount; ++p)
 	{
-		// for (int i = 0; i < ElementCount; ++i)
-		// {
-		// 	coldBarInflow[timestep][p][i] *= 10;
-		// }
+		// std::cout << timestep << " process ";
 
-		// GasReservoir dummy = GasReservoir();
+		// std::cout << coldBarInflow[timestep][p][Magnesium] << ' ';
 
 		Gas coldGas = Gas(coldBarInflow[timestep][p]);
 		Gas hotGas = Gas(hotBarInflow[timestep][p]);
@@ -186,16 +165,18 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 		GasStream processGasStream = GasStream(source, hotGas, coldGas);
 
 		IGM[source].Absorb(processGasStream);
-
 		// qq why does gas resevoir have a Paramsobject that is not initialised?
 	}
+	// std::cout << std::endl;
 
 	double elemmass = 0;
+
 	for (int e = 0; e < ElementCount; ++e)
 	{
 		elemmass += coldBarInflow[timestep][0][e];
 	}
-	// std::cout << "IGM "<<IGM[(SourceProcess)(0)].ColdMass()<< ' ' << IGM.ColdMass()<< ' ' << elemmass<<std::endl;
+
+	//std::cout << timestep * 0.03 << " IGM " << IGM[(SourceProcess)(0)].ColdMass() << ' ' << IGM.ColdMass() << ' ' << elemmass << std::endl;
 }
 
 // Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes
@@ -255,13 +236,13 @@ std::vector<int> NuclearDisk::barGrowthFunction()
 	return barLengthInRings;
 }
 
-void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string galaxyFileHot){
+void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string galaxyFileHot)
+{
 	double t0 = 0;
 	int i = 0;
 	forLineVectorIn(
 		galaxyFileCold, ', ',
-		if (i > 0) 
-		{
+		if (i > 0) {
 			// std::cout << FILE_LINE_VECTOR[0]<<std::endl;
 			double t1 = std::stod(FILE_LINE_VECTOR[0]);
 			// std::cout << t1-t0<< ' ' <<Param.Meta.TimeStep<< ' ' <<(t1-t0) - Param.Meta.TimeStep<<std::endl;
@@ -274,16 +255,13 @@ void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string ga
 				}
 			}
 			t0 = t1;
-		} 
-		++i;
-	)
+		} ++i;)
 
-	t0 = 0;
+		t0 = 0;
 	i = 0;
 	forLineVectorIn(
 		galaxyFileHot, ', ',
-		if (i > 0) 
-		{
+		if (i > 0) {
 			// std::cout << FILE_LINE_VECTOR[0]<<std::endl;
 			double t1 = std::stod(FILE_LINE_VECTOR[0]);
 			// std::cout << t1-t0<< ' ' <<Param.Meta.TimeStep<< ' ' <<(t1-t0) - Param.Meta.TimeStep<<std::endl;
@@ -296,11 +274,7 @@ void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string ga
 				}
 			}
 			t0 = t1;
-		} 
-		++i;
-	)
-
-
+		} ++i;)
 }
 
 void NuclearDisk::getBarInflow()
@@ -351,16 +325,10 @@ void NuclearDisk::getBarInflow()
 	forLineVectorIn(
 		galaxyFileCold, ', ',
 		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
-		// std::string comp2 = std::to_string(timestep) + ',';
-
 		if (FILE_LINE_VECTOR[1] == comp) {
-			// std::cout<< timestep<<' ' <<FILE_LINE_VECTOR[1]<<std::endl;
-			// std::cout << FILE_LINE<<std::endl;
 			coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
 			++timestep;
 		});
-
-	// std::cout<<coldBarInflow[350]
 
 	timestep = 0;
 	forLineVectorIn(
@@ -371,38 +339,29 @@ void NuclearDisk::getBarInflow()
 			++timestep;
 		});
 
-	for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
-	{
-		Data.UrgentLog(std::to_string(i) + ' ');
-		for (int e = 0; e < ElementCount; ++e)
-		{
-			Data.UrgentLog(std::to_string(coldBarInflow[i][0][e]) + ' ');
-			// std::cout << i << ' '<< coldBarInflow[i][0][e];
-		}
-		// Data.UrgentLog( " tab ");
-		// for (int e = 0; e < ElementCount; ++e)
-		// {
-		// 	Data.UrgentLog(std::to_string(coldBarInflow[i][1][e])+ ' ');
-		// }
-		Data.UrgentLog(" \n ");
-	}
-	Data.UrgentLog("\n");
-	for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
-	{
-		for (int e = 0; e < ElementCount; ++e)
-		{
-			Data.UrgentLog(std::to_string(hotBarInflow[i][0][e]) + ' ');
-			// std::cout << i << ' '<< coldBarInflow[i][0][e];
-		}
-		// Data.UrgentLog( " tab ");
-		// for (int e = 0; e < ElementCount; ++e)
-		// {
-		// 	Data.UrgentLog(std::to_string(coldBarInflow[i][1][e])+ ' ');
-		// }
-		Data.UrgentLog(" \n ");
-	}
+	// for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
+	// {
+	// 	Data.UrgentLog(std::to_string(i) + ' ');
+	// 	for (int e = 0; e < ElementCount; ++e)
+	// 	{
+	// 		Data.UrgentLog(std::to_string(coldBarInflow[i][0][e]) + ' ');
+	// 		// std::cout << i << ' '<< coldBarInflow[i][0][e];
+	// 	}
+	// 	Data.UrgentLog(" \n ");
+	// }
+	// Data.UrgentLog("\n");
+	// for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
+	// {
+	// 	for (int e = 0; e < ElementCount; ++e)
+	// 	{
+	// 		Data.UrgentLog(std::to_string(hotBarInflow[i][0][e]) + ' ');
+	// 		// std::cout << i << ' '<< coldBarInflow[i][0][e];
+	// 	}
+	// 	Data.UrgentLog(" \n ");
+	// }
 }
 
+// change to more linear grow
 double NuclearDisk::GasScaleLength(double t)
 {
 
@@ -412,16 +371,87 @@ double NuclearDisk::GasScaleLength(double t)
 	double tf = Param.Galaxy.ScaleLengthFinalTime;
 	double R0 = Param.Galaxy.MinScaleLength;
 	double Rf = Param.Galaxy.MaxScaleLength;
+	double Ri = 0.0175 * Param.NuclearDisk.BarInitialLength;
 
 	if (t < tdelay)
 	{
-		// std::cout << t << ' ' << R0 <<  ' ' << Param.Meta.TimeStep <<'\n';
 		return R0;
 	}
+	else if (t < tdelay + t0)
+	{
+		return R0 + (t - tdelay) * (Ri - R0) / (t0);
+	}
+	else
+	{
+		return Ri + (t - tdelay - t0) * (Rf - Ri) / (Param.Meta.SimulationDuration - t0 - tdelay);
+	}
 
-	double N = 1.0 / (atan((tf - tdelay - t0) / tg) - atan(-t0 / tg));
+	// double N = 1.0 / (atan((tf - tdelay - t0) / tg) - atan(-t0 / tg));
 
-	// std::cout << t << ' ' <<  R0 + N*(Rf - R0) * (atan( (t -tdelay - t0)/tg) - atan(-t0/tg)) << '\n';
+	// return R0 + N * (Rf - R0) * (atan((t - tdelay - t0) / tg) - atan(-t0 / tg));
+}
 
-	return R0 + N * (Rf - R0) * (atan((t - tdelay - t0) / tg) - atan(-t0 / tg));
+double NuclearDisk::NormaliseSurfaceDensity(double scaleLength)
+{
+	double pi = 3.141592654;
+	double nuclearRingWidth = 0.005; //change also below
+	double dropOffDelta = 0.001;
+
+	double sum = 0;
+
+	for (int i = 0; i < Rings.size(); ++i)
+	{
+		double r = Rings[i].Radius;
+		double w = Rings[i].Width;
+
+		double upRadius = (r + w / 2) / scaleLength;
+		double downRadius = (r - w / 2) / scaleLength;
+
+		double total = (mass_integrand(upRadius) - mass_integrand(downRadius));
+
+		double nuclearRingEdge = 2.0 * scaleLength + 0.5 * nuclearRingWidth;
+		if (r > nuclearRingEdge)
+		{
+			total *= exp(-(r - nuclearRingEdge) / dropOffDelta);
+		}
+
+		sum += total;
+	}
+	return sum;
+}
+
+// adds a nuclear ring at 2*scaleLength with a mass fraction of the total mass and dropoff outside of it
+double NuclearDisk::PredictSurfaceDensity(double radius, double width, double totalGasMass, double scaleLength, double expNorm)
+{
+	double pi = 3.141592654;
+	double nuclearRingWidth = 0.005; //change also above
+	double dropOffDelta = 0.001;
+	double nuclearRingMassFraction = Param.NuclearDisk.NuclearRingMassFraction;
+	double r = radius;
+	double w = width;
+	double prefactor = 1 / (2 * pi * r * w);
+	double upRadius = (r + w / 2) / scaleLength;
+	double downRadius = (r - w / 2) / scaleLength;
+
+	double total = (mass_integrand(upRadius) - mass_integrand(downRadius));
+
+	double ringstrength = 0;
+
+	double nuclearRingEdge = 2.0 * scaleLength + 0.5 * nuclearRingWidth;
+	if (r > nuclearRingEdge)
+	{
+		total *= exp(-(r - nuclearRingEdge) / dropOffDelta);
+	}
+
+	total *= prefactor;
+
+	if (r > 2.0 * scaleLength - 0.5 * nuclearRingWidth && r < nuclearRingEdge)
+	{
+		ringstrength = nuclearRingMassFraction / (1.0 - nuclearRingMassFraction) * (expNorm / (4.0 * pi * scaleLength * nuclearRingWidth));
+		total += ringstrength;
+	}
+
+	double normFactor = expNorm + ringstrength * 4.0 * pi * scaleLength * nuclearRingWidth;
+
+	return totalGasMass / normFactor * total;
 }

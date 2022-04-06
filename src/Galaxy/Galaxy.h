@@ -47,8 +47,10 @@ class Galaxy
 		void AssignMagnitudes(int time, int ringstart, int ringend);
 		
 		double PredictSurfaceDensity(double radius,double width, double totalGasMass, double scalelength);
+		double mass_integrand(double x);
 		double GasMass();
 		double ColdGasMass();
+		double HotGasMass();
 		double StarMass();
 		void IGMOperations();
 

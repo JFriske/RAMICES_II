@@ -23,8 +23,11 @@ class NuclearDisk : public Galaxy
         void getBarInflow(); 
         void updateBarInflowResevoir(int timestep);
         double GasScaleLength(double t);
+        double NormaliseSurfaceDensity(double scaleLength);
+        double PredictSurfaceDensity(double radius, double width, double totalGasMass, double scaleLength, double expNorm);
         void Infall(double time, int timestep);
         double InfallMass(int timestep);
+        void LoseHotGas();
 
         void checkTimeResolution(std::string galaxyFileCold, std::string  galaxyFileHot );
         std::vector<int> barGrowthFunction();

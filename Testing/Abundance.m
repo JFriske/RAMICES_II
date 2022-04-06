@@ -4,7 +4,7 @@ set(0,'defaultTextInterpreter','latex');
 set(0,'defaultAxesFontSize',28);
 
 % T=tiledlayout(4,2);
-files = "../Output/" + ["NucDiskTest"]+ "/Enrichment_Log_ColdGas.dat";
+files = "../Output/" + ["NucDiskTest", "Test"]+ "/Enrichment_Log_ColdGas.dat";
 
 
 figure(3);
@@ -73,8 +73,8 @@ for i = 1:length(r)
 end
  colorbar;
  caxis([min(r),max(r)])
- xlim([-2.5,1.2]);
-%  ylim([-0.3,0.5]);
+ xlim([-2.5,0.8]);
+  ylim([-0.0,0.7]);
  hold off;
     
 title("\verb|" +fileName + "|","FontSize",10);

@@ -196,7 +196,6 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 	{
 		processVectors.push_back(std::vector<double>(doubleVector.begin() + (p + 1) * ElementCount, doubleVector.begin() + (p + 2) * ElementCount));
 	}
-	std::cout<< processVectors[0][0]<<std::endl;
 	return processVectors;
 }
 
@@ -356,7 +355,7 @@ void NuclearDisk::getBarInflow()
 			//Data.UrgentLog(upperRing[0][0] +'\n');
 			std::vector<std::vector<double>> averageRing = lowerRing;
 			for(int p = 0; p <= ProcessCount-1; ++p){
-				Data.UrgentLog(compUpper +'\n');
+				//Data.UrgentLog(compUpper +'\n');
 				for (int i = 0; i <= lowerRing[p].size(); ++i){
 					double remainderFraction = fmod(barLength, (int)barLength);
 					//std::cout <<"i "<< i<<" "<< p <<std::endl;
@@ -394,7 +393,7 @@ void NuclearDisk::getBarInflow()
 			//Data.UrgentLog(upperRing[0][0] +'\n');
 			std::vector<std::vector<double>> averageRing = lowerRing;
 			for(int p = 0; p <= ProcessCount-1; ++p){
-				Data.UrgentLog(compUpper +'\n');
+				//Data.UrgentLog(compUpper +'\n');
 				for (int i = 0; i <= lowerRing[p].size(); ++i){
 					double remainderFraction = fmod(barLength, (int)barLength);
 					//std::cout <<"i "<< i<<" "<< p <<std::endl;
@@ -410,26 +409,6 @@ void NuclearDisk::getBarInflow()
 		}
 		);
 
-	// for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
-	// {
-	// 	Data.UrgentLog(std::to_string(i) + ' ');
-	// 	for (int e = 0; e < ElementCount; ++e)
-	// 	{
-	// 		Data.UrgentLog(std::to_string(coldBarInflow[i][0][e]) + ' ');
-	// 		// std::cout << i << ' '<< coldBarInflow[i][0][e];
-	// 	}
-	// 	Data.UrgentLog(" \n ");
-	// }
-	// Data.UrgentLog("\n");
-	// for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
-	// {
-	// 	for (int e = 0; e < ElementCount; ++e)
-	// 	{
-	// 		Data.UrgentLog(std::to_string(hotBarInflow[i][0][e]) + ' ');
-	// 		// std::cout << i << ' '<< coldBarInflow[i][0][e];
-	// 	}
-	// 	Data.UrgentLog(" \n ");
-	// }
 }
 
 // change to more linear grow

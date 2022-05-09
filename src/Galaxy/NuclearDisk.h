@@ -30,7 +30,7 @@ class NuclearDisk : public Galaxy
         void LoseHotGas();
 
         void checkTimeResolution(std::string galaxyFileCold, std::string  galaxyFileHot );
-        std::vector<int> barGrowthFunction();
+        std::vector<double> barGrowthFunction();
 
 
         std::vector<std::vector<double>> readAndSliceInput(std::vector<std::string> stringVector);

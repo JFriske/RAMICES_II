@@ -112,13 +112,13 @@ void NuclearDisk::Infall(double t, int timestep)
 
 void NuclearDisk::LoseHotGas()
 {
-	 std::cout <<HotGasMass()<<' ';
+	//std::cout <<HotGasMass()<<' ';
 	for (int r = 0; r < Param.Galaxy.RingCount; ++r)
 	{
 		double hotMass = Rings[r].Gas.HotMass();
 		Rings[r].Gas.Deplete(0.0, Param.NuclearDisk.HotGasLossTimeStep * hotMass);
 	}
-	 std::cout<<HotGasMass()<<std::endl;
+	 //std::cout<<HotGasMass()<<std::endl;
 }
 
 // accretion in the begining -> what to do with ring 0?
@@ -196,14 +196,14 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 	{
 		processVectors.push_back(std::vector<double>(doubleVector.begin() + (p + 1) * ElementCount, doubleVector.begin() + (p + 2) * ElementCount));
 	}
-
+	std::cout<< processVectors[0][0]<<std::endl;
 	return processVectors;
 }
 
 // linear growth of the bar with a initialisiation time period of rapid growth and subsequent slow growth
-std::vector<int> NuclearDisk::barGrowthFunction()
+std::vector<double> NuclearDisk::barGrowthFunction()
 {
-	std::vector<int> barLengthInRings(Param.Meta.SimulationSteps);
+	std::vector<double> barLengthInRings(Param.Meta.SimulationSteps);
 
 	for (int timestep = 0; timestep < Param.Meta.SimulationSteps; ++timestep)
 	{
@@ -227,11 +227,11 @@ std::vector<int> NuclearDisk::barGrowthFunction()
 		}
 
 		double ringwidth = Param.NuclearDisk.GalaxyRadius / Param.NuclearDisk.GalaxyRingCount;
-		int ringToEmpty = (int)(barLength / ringwidth);
+		double ringToEmpty = (barLength / ringwidth);
 
 		barLengthInRings[timestep] = ringToEmpty;
 
-		// std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl;
+		 //std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl;
 	}
 	return barLengthInRings;
 }
@@ -286,16 +286,18 @@ void NuclearDisk::getBarInflow()
 
 	// std::cout <<Param.Galaxy.Radius << " " << Param.Galaxy.RingCount << " " << Param.Galaxy.RingWidth[5] << "\n";
 
-	std::vector<int> barLengthInRings = barGrowthFunction();
+	std::vector<double> barLengthInRings = barGrowthFunction();
 
 	timestepsPerRing.resize(Param.Meta.SimulationSteps);
 	int sameRingCount = 1;
 	for (int r = 1; r < barLengthInRings.size(); ++r)
 	{
+		//std::cout<< r << " " <<sameRingCount<<std::endl;
 		// currently very last timestep doesn't accrete
-		if ((barLengthInRings[r] == barLengthInRings[r - 1]) && (r != barLengthInRings.size() - 1))
+		if (((int)barLengthInRings[r] == (int)barLengthInRings[r - 1]) && (r != barLengthInRings.size() - 1))
 		{
 			++sameRingCount;
+			
 		}
 
 		else if (r == barLengthInRings.size() - 1)
@@ -315,29 +317,98 @@ void NuclearDisk::getBarInflow()
 			}
 			sameRingCount = 1;
 		}
+
+		//std::cout<< r << " end " <<sameRingCount<<std::endl;
 	}
+
+	//std::cout<<"HALLO/n";
+    //Data.UrgentLog(galaxyFileCold + '\n');
 
 	// checking whether time resolutions match
 	checkTimeResolution(galaxyFileCold, galaxyFileHot);
 
+
 	int timestep = 0;
+
+	double barLength = barLengthInRings[timestep];
+
+		std::vector<std::vector<double>> lowerRing;
+		std::vector<std::vector<double>> upperRing;
 
 	forLineVectorIn(
 		galaxyFileCold, ', ',
-		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
-		if (FILE_LINE_VECTOR[1] == comp) {
-			coldBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
+		//Data.UrgentLog(galaxyFileCold + '\n');
+		std::string compLower = std::to_string((int)barLength) + ',';
+		std::string compUpper = std::to_string((int)(barLength)+1) + ',';
+		if ( (int) barLength == Param.Galaxy.RingCount-1){
+			compUpper = compLower;
+		}
+
+		if (FILE_LINE_VECTOR[1] == compLower) {
+			lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
+			//std::cout<<lowerRing[1][1] <<'\n';
+			//Data.UrgentLog(compLower +'\n');
+		}
+		if (FILE_LINE_VECTOR[1] == compUpper) {
+			
+			upperRing = readAndSliceInput(FILE_LINE_VECTOR);
+			//Data.UrgentLog(compUpper +'\n');
+			//Data.UrgentLog(upperRing[0][0] +'\n');
+			std::vector<std::vector<double>> averageRing = lowerRing;
+			for(int p = 0; p <= ProcessCount-1; ++p){
+				Data.UrgentLog(compUpper +'\n');
+				for (int i = 0; i <= lowerRing[p].size(); ++i){
+					double remainderFraction = fmod(barLength, (int)barLength);
+					//std::cout <<"i "<< i<<" "<< p <<std::endl;
+					if(barLength == 0){remainderFraction = 0;}
+					//std::cout << barLength << " " << (int)barLength << " " <<remainderFraction<<" "<< (upperRing[p][0] - lowerRing[p][0] ) <<std::endl;
+					//Data.UrgentLog(compUpper +'\n');
+					averageRing[p][i] +=  remainderFraction *(upperRing[p][i] - lowerRing[p][i] );
+				}
+			}
+
+			coldBarInflow.push_back(averageRing);
 			++timestep;
-		});
+		}
+		);
 
 	timestep = 0;
 	forLineVectorIn(
 		galaxyFileHot, ', ',
-		std::string comp = std::to_string(barLengthInRings[timestep]) + ',';
-		if (FILE_LINE_VECTOR[1] == comp) {
-			hotBarInflow.push_back(readAndSliceInput(FILE_LINE_VECTOR));
+		//Data.UrgentLog(galaxyFileCold + '\n');
+		std::string compLower = std::to_string((int)barLength) + ',';
+		std::string compUpper = std::to_string((int)(barLength)+1) + ',';
+		if ( (int) barLength == Param.Galaxy.RingCount-1){
+			compUpper = compLower;
+		}
+
+		if (FILE_LINE_VECTOR[1] == compLower) {
+			lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
+			//std::cout<<lowerRing[1][1] <<'\n';
+			//Data.UrgentLog(compLower +'\n');
+		}
+		if (FILE_LINE_VECTOR[1] == compUpper) {
+			
+			upperRing = readAndSliceInput(FILE_LINE_VECTOR);
+			//Data.UrgentLog(compUpper +'\n');
+			//Data.UrgentLog(upperRing[0][0] +'\n');
+			std::vector<std::vector<double>> averageRing = lowerRing;
+			for(int p = 0; p <= ProcessCount-1; ++p){
+				Data.UrgentLog(compUpper +'\n');
+				for (int i = 0; i <= lowerRing[p].size(); ++i){
+					double remainderFraction = fmod(barLength, (int)barLength);
+					//std::cout <<"i "<< i<<" "<< p <<std::endl;
+					if(barLength == 0){remainderFraction = 0;}
+					//std::cout << barLength << " " << (int)barLength << " " <<remainderFraction<<" "<< (upperRing[p][0] - lowerRing[p][0] ) <<std::endl;
+					//Data.UrgentLog(compUpper +'\n');
+					averageRing[p][i] +=  remainderFraction *(upperRing[p][i] - lowerRing[p][i] );
+				}
+			}
+
+			hotBarInflow.push_back(averageRing);
 			++timestep;
-		});
+		}
+		);
 
 	// for (int i = 0; i < Param.Meta.SimulationSteps; i += 50)
 	// {
@@ -414,7 +485,6 @@ double NuclearDisk::NormaliseSurfaceDensity(double scaleLength)
 		{
 			total *= exp(-(r - nuclearRingEdge) / dropOffDelta);
 		}
-
 		sum += total;
 	}
 	return sum;
@@ -429,29 +499,30 @@ double NuclearDisk::PredictSurfaceDensity(double radius, double width, double to
 	double nuclearRingMassFraction = Param.NuclearDisk.NuclearRingMassFraction;
 	double r = radius;
 	double w = width;
-	double prefactor = 1 / (2 * pi * r * w);
-	double upRadius = (r + w / 2) / scaleLength;
-	double downRadius = (r - w / 2) / scaleLength;
+	double prefactor = 1.0 / (2 * pi * r * w);
+	double upRadius = (r + w / 2.0) / scaleLength;
+	double downRadius = (r - w / 2.0) / scaleLength;
 
 	double total = (mass_integrand(upRadius) - mass_integrand(downRadius));
 
-	double ringstrength = 0;
 
 	double nuclearRingEdge = 2.0 * scaleLength + 0.5 * nuclearRingWidth;
 	if (r > nuclearRingEdge)
 	{
 		total *= exp(-(r - nuclearRingEdge) / dropOffDelta);
 	}
+	
+	total *= 0.8 /expNorm;
 
 	total *= prefactor;
 
-	if (r > 2.0 * scaleLength - 0.5 * nuclearRingWidth && r < nuclearRingEdge)
-	{
-		ringstrength = nuclearRingMassFraction / (1.0 - nuclearRingMassFraction) * (expNorm / (4.0 * pi * scaleLength * nuclearRingWidth));
-		total += ringstrength;
-	}
+	double stdev = 0.35*nuclearRingWidth;
+	double mu = 2.0 * scaleLength;
 
-	double normFactor = expNorm + ringstrength * 4.0 * pi * scaleLength * nuclearRingWidth;
 
-	return totalGasMass / normFactor * total;
+	double nuclearRingGauss = 0.2/(r * 2.0 * pi * stdev * sqrt(2.0 * pi)) * exp( - 0.5 * (r-mu)*(r-mu)/(stdev*stdev));
+
+	total += nuclearRingGauss;
+
+	return totalGasMass * total;
 }

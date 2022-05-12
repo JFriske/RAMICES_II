@@ -71,6 +71,6 @@ void SimpleYield::NSM_Initialise()
 	hotInjectionFraction = Param.Thermal.HotInjection_NSM;
 	Grid = std::vector<double>(ElementCount,0.0);
 	double M_nsm = Param.Yield.NSM_TypicalMass;
-	Grid[Europium] = M_nsm;
+	Grid[Europium] = 0.0;//M_nsm;
 	Grid[Metals] = M_nsm;
 }

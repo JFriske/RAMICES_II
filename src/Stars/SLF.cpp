@@ -18,6 +18,9 @@ SLF_Functor::SLF_Functor(const GlobalParameters & param) : Param(param)
 
 int SLF_Functor::operator()(int mass, double metallicity)
 {
+	// if (Param.Stellar.MassGrid[mass] < 8.5){
+	// 	return(100);
+	// }
 	double logZ = std::max(log10(metallicity+1e-99),Param.Stellar.MinLogZ.Value);
 	//~ std::cout << "SLF(" << mass << ", " << ", " << metallicity << ", " << logZ << "  )" <<std::endl;
 	if (logZ > Param.Stellar.MaxLogZ)

@@ -91,7 +91,7 @@ double YieldGrid::ElementProduction(ElementID element, double synthesisFraction,
 	}
 	double Counter = 0;
 	for (int p = 0 ; p < ProcessCount;++p)
-	{
+	{	
 		SourceProcess proc = (SourceProcess)p;
 		double initialProcessMass = birthStreams[proc].ColdMass();
 		
@@ -169,6 +169,8 @@ RemnantOutput YieldGrid::StellarInject( GasReservoir & scatteringReservoir,  dou
 	
 	double Mg = 0;
 	double Fe = 0;
+	double H = 0;
+
 	std::vector<GasStream> chunkCatcher;
 	for (int p = 0; p < ProcessCount; ++p)
 	{
@@ -196,19 +198,29 @@ RemnantOutput YieldGrid::StellarInject( GasReservoir & scatteringReservoir,  dou
 			}
 		}
 		
-		//~ if (elem == Iron)
-		//~ {
-			//~ std::cout << "For " << Nstars << " with mass " << Param.Stellar.MassGrid[mass] << " and logZ = " << log10(z) << " my net iron synthesis frac is = " << synthesisFraction << " making " << Counter*1e9/Nstars << std::endl;
-			//~ Fe = Counter;
-		//~ }
-		//~ if (elem == Magnesium)
-		//~ {
-			//~ std::cout << "For " << Nstars << " stars with mass " << Param.Stellar.MassGrid[mass] << " and logZ = " << log10(z) << " my net mg synthesis frac is = " << synthesisFraction << " making " << Counter*1e9/Nstars << std::endl;
-			//~ Mg = Counter;
-		//~ }
+		 if (elem == Iron)
+		 {
+		// std::cout << "For " << Nstars << " with mass " << Param.Stellar.MassGrid[mass] << " and logZ = " << log10(z) << " my net iron synthesis frac is = " << synthesisFraction << " making " << Counter*1e9/Nstars << std::endl;
+		 Fe = Counter;
+		 }
+		 if (elem == Magnesium)
+		 {
+		 //std::cout << "For " << Nstars << " stars with mass " << Param.Stellar.MassGrid[mass] << " and logZ = " << log10(z) << " my net mg synthesis frac is = " << synthesisFraction << " making " << Counter*1e9/Nstars << std::endl;
+		 Mg = Counter;
+		 }
 	}
+	if(Param.Stellar.MassGrid[mass]<8.5){
+
+		for (int p = 0; p < ProcessCount; ++p)
+	{
+		SourceProcess proc = (SourceProcess)p;
+		H += chunkCatcher[proc].Cold(Hydrogen);
+	} 
 	
-	//~ std::cout << "Synthesised in ratio " << Mg/Fe << " giving [Mg/Fe] = " << log10(Mg/Fe) - log10(Param.Element.SolarAbundances[Magnesium]/Param.Element.SolarAbundances[Iron]) << std::endl;
+	
+	//  std::cout << "Synthesised in ratio " << Mg/Fe << " giving [Mg/Fe] = " << log10(Mg/Fe) - log10(Param.Element.SolarAbundances[Magnesium]/Param.Element.SolarAbundances[Iron]) << std::endl;
+	//  std::cout << "Synthesised in ratio " << Fe/H << " giving [Fe/H] = " << log10(Fe/H) - log10(Param.Element.SolarAbundances[Iron]/Param.Element.SolarAbundances[Hydrogen]) << std::endl;
+	}
 	double xSum = 0;
 	double ySum = 0;
 	double zSum = 0;
@@ -459,11 +471,11 @@ void YieldGrid::CreateGrid()
 						Grid[mIndex][zIndex][i] = 0;
 					}
 					
-					//~ if (i == Oxygen && Grid[mIndex][zIndex][i] > 0)
-					//~ {
-						//~ std::cout << "At m = " << mass << "   z = " << z << " I have " << Grid[mIndex][zIndex][i] << std::endl;
-						//~ exit(5);
-					//~ }
+					// if (i == Oxygen && Grid[mIndex][zIndex][i] > 0)
+					//  {
+					// 	 std::cout << "At m = " << mass << "   z = " << z << " I have " << Grid[mIndex][zIndex][i] << std::endl;
+					// 	 //exit(5);
+					//  }
 				}
 			}
 			
@@ -610,10 +622,22 @@ void YieldGrid::SaveGrid(std::string name)
 			output << mass << ", " << logz;
 			for (int i = 0; i < ElementCount; ++i)
 			{
-				output << ", " << Grid[mIndex][zIndex][i];
+
+				// if(name == "AGB"){
+				// 	//std::cout <<"here"<<std::endl;
+				// 	output << ", " << 0.0;
+				// }
+				// else{
+				 output << ", " << Grid[mIndex][zIndex][i];
+				// }
 			}
-			output << ", " << Grid[mIndex][zIndex][RemnantLocation] << "\n";
-		
+			// if(name == "AGB"){
+			// 		output << ", " << 0.0<< "\n";
+			// }
+			// else{
+				output << ", "  << Grid[mIndex][zIndex][RemnantLocation] << "\n";
+			// }
+			
 			//~ YieldBracket pair = GetBracket(i,mass,z);
 			//~ Grid[i][mIndex][zIndex] = pair.Interpolate(mass,z);
 		}

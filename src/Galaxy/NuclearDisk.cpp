@@ -14,6 +14,18 @@ void NuclearDisk::Evolve()
 	getBarInflow();
 	int finalStep = Param.Meta.SimulationSteps - 1; // intentionally offset by 1!
 
+	Gas pollute;
+	pollute = pollute.Primordial(0.00001);
+	pollute[Europium] += 0.000001;
+	GasStream pollutestream(Accreted);
+	pollutestream.Absorb(pollute,0.0);
+
+	for(int i = 0; i < Param.Galaxy.RingCount; ++i){
+		Rings[i].Gas.Absorb(pollutestream);
+	}
+
+
+
 	for (int timestep = 0; timestep < finalStep; ++timestep)
 	{
 		// std::cout << "Time " << timestep << std::endl;
@@ -196,7 +208,6 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 	{
 		processVectors.push_back(std::vector<double>(doubleVector.begin() + (p + 1) * ElementCount, doubleVector.begin() + (p + 2) * ElementCount));
 	}
-	std::cout<< processVectors[0][0]<<std::endl;
 	return processVectors;
 }
 
@@ -356,7 +367,7 @@ void NuclearDisk::getBarInflow()
 			//Data.UrgentLog(upperRing[0][0] +'\n');
 			std::vector<std::vector<double>> averageRing = lowerRing;
 			for(int p = 0; p <= ProcessCount-1; ++p){
-				Data.UrgentLog(compUpper +'\n');
+				//Data.UrgentLog(compUpper +'\n');
 				for (int i = 0; i <= lowerRing[p].size(); ++i){
 					double remainderFraction = fmod(barLength, (int)barLength);
 					//std::cout <<"i "<< i<<" "<< p <<std::endl;
@@ -394,7 +405,7 @@ void NuclearDisk::getBarInflow()
 			//Data.UrgentLog(upperRing[0][0] +'\n');
 			std::vector<std::vector<double>> averageRing = lowerRing;
 			for(int p = 0; p <= ProcessCount-1; ++p){
-				Data.UrgentLog(compUpper +'\n');
+				//Data.UrgentLog(compUpper +'\n');
 				for (int i = 0; i <= lowerRing[p].size(); ++i){
 					double remainderFraction = fmod(barLength, (int)barLength);
 					//std::cout <<"i "<< i<<" "<< p <<std::endl;

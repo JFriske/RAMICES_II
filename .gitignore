@@ -33,3 +33,5 @@ RAMICES_II*
 *.out
 *.app
 
+# Output
+.pdf

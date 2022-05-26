@@ -17,7 +17,7 @@ class NuclearDisk : public Galaxy
         void Evolve();
 
     private:
-        std::string galaxyDir= "Test";
+        std::string galaxyDir= Param.NuclearDisk.GlobalReadInDir;
 
 
         void getBarInflow(); 

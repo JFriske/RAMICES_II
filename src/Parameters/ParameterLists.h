@@ -88,6 +88,8 @@ class OutputValues : public ParamList
 class NuclearDiskValues : public ParamList
 {
 	public:
+		Argument<std::string> GlobalReadInDir = Argument<std::string> ("Test", "readin-dir");
+
 		Argument<bool> DoNuclearDisk = Argument<bool>(0, "nuclear-disk-flag");
 
 		Argument<double> BarGrowthStart = Argument<double>(3.5, "bar-start");
@@ -113,7 +115,7 @@ class NuclearDiskValues : public ParamList
 		//!Boring constructor -- slots in the relevant arguments into the ParamList::argPointer array.
 		NuclearDiskValues()
 		{
-			argPointers = {&DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
+			argPointers = {&GlobalReadInDir, &DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
 		};
 		
 		//! An overload of a normally empty function. Goes through and creates the necessary directory structure 

@@ -37,3 +37,7 @@ RAMICES_II*
 *.pdf
 
 *config/NucDiskOldParams/*
+*checkpoint.ipynb
+*Untitled.ipynb*
+Testing/metplanesNucDiskNoAGB.pdf
+Testing/NucDiskGradientNucDiskNoAGB.pdf

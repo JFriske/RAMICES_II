@@ -45,7 +45,7 @@ double StarReservoir::SFR_GasLoss(double coldMass, double hotMass, double ejectF
 	double prefactorSmall = prefactorBig * pow(sigmaCut,nBig - nSmall);
 	//integrates the SFR smoothly over the timestep (including Feedback losses), makes it impossible to losemore gas than you have
 	
-	double N = 50;
+	double N = 100;
 	double ddt = Param.Meta.TimeStep/(N);
 	double coldDensity = coldMass/ParentArea;
 	double hotDensity = hotMass/ParentArea;
@@ -109,7 +109,7 @@ void StarReservoir::Form(GasReservoir & gas, GasReservoir & cgm)
 	EventRate[PopulationIndex].StarMassFormed += starMassFormed;
 	EventRate[PopulationIndex].NStarsFormed += newStarCount;
 	EventRate[PopulationIndex].Efficiency = starMassFormed / (Param.Meta.TimeStep * initMass);
-	
+
 	//check that nothing went horribly wrong
 	if (gas.ColdMass() < 0)
 	{

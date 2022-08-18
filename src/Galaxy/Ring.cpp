@@ -58,11 +58,12 @@ void Ring::UpdateMemory(int t)
 	//~ Gas.UpdateMemory(t);
 }
 
-void neatLog(double value, std::stringstream & stream)
+void neatLogLog(double value, std::stringstream & stream)
 {
 	if (isinf(value) || isnan(value))
 	{
-		stream << ", nan";
+	stream << ", nan";
+
 	}
 	else
 	{
@@ -146,7 +147,7 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 	}
 	
 
-	for (int p = 0; p < ProcessCount + 1; ++p)
+	for (int p = 0; p < ProcessCount + 1; ++p)  
 	{
 		for (int e = 0; e < ElementCount; ++e)
 		{
@@ -157,14 +158,14 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 				coldCorrect = target[p-1].ColdMass();
 				hotCorrect = target[p-1].HotMass();
 			}
-			neatLog(ColdBuffer[p][e] * coldCorrect, absoluteStreamCold);
-			neatLog(HotBuffer[p][e] * hotCorrect, absoluteStreamHot);
+			neatLogAbs(ColdBuffer[p][e] * coldCorrect, absoluteStreamCold);
+			neatLogAbs(HotBuffer[p][e] * hotCorrect, absoluteStreamHot);
 					
 			double logValueCold = log10(ColdBuffer[p][e] / Param.Element.SolarAbundances[e]);
 			double logValueHot = log10(HotBuffer[p][e]/Param.Element.SolarAbundances[e]);
 			
-			neatLog(logValueCold,logarithmicStreamCold);
-			neatLog(logValueHot,logarithmicStreamHot);
+			neatLogLog(logValueCold,logarithmicStreamCold);
+			neatLogLog(logValueHot,logarithmicStreamHot);
 	
 		}
 	}

@@ -85,6 +85,44 @@ class OutputValues : public ParamList
 		virtual void Initialise(std::string resourceRoot);
 };
 
+class NuclearDiskValues : public ParamList
+{
+	public:
+		Argument<std::string> GlobalReadInDir = Argument<std::string> ("Test", "readin-dir");
+
+		Argument<bool> DoNuclearDisk = Argument<bool>(0, "nuclear-disk-flag");
+
+		Argument<double> BarGrowthStart = Argument<double>(3.5, "bar-start");
+
+		Argument<double> BarInitialiseTime = Argument<double>(0.5, "bar-initialise-time");
+
+		Argument<double> BarInitialLength = Argument<double>(1.5, "bar-initial-length");
+
+		Argument<double> BarFinalLength = Argument<double>(4.0, "bar-length-final");
+
+		Argument<double> NuclearRingMassFraction = Argument<double>(0.2, "nuc-ring-fraction");
+
+		Argument<double> GalaxyRadius = Argument<double>(20.0, "galaxy-cutoff-radius");
+
+		Argument<int> GalaxyRingCount = Argument<int>(100, "galaxy-ring-number");
+
+		Argument<double> HotGasTransportLoss = Argument<double>(0.7, "hot-gas-transport-loss");
+
+		Argument<double> ColdGasTransportLoss = Argument<double>(0.5, "cold-gas-transport-loss");
+
+		Argument<double> HotGasLossTimeStep = Argument<double>(0.9, "hot-gas-expelled");
+
+		//!Boring constructor -- slots in the relevant arguments into the ParamList::argPointer array.
+		NuclearDiskValues()
+		{
+			argPointers = {&GlobalReadInDir, &DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
+		};
+		
+		//! An overload of a normally empty function. Goes through and creates the necessary directory structure 
+		//virtual void Initialise(std::string resourceRoot);
+};
+
+
 class ResourceValues : public ParamList
 {
 	public:

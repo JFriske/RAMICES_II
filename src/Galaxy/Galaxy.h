@@ -19,8 +19,8 @@ class Galaxy
 		void Evolve();
 		void SynthesiseObservations();
 		std::vector<Ring> Rings;
-	private:
-		
+
+	protected:
 		std::vector<std::thread> Threads;
 		std::vector<MigrationMatrix> Migrator;
 		GasReservoir CGM;
@@ -47,8 +47,10 @@ class Galaxy
 		void AssignMagnitudes(int time, int ringstart, int ringend);
 		
 		double PredictSurfaceDensity(double radius,double width, double totalGasMass, double scalelength);
+		double mass_integrand(double x);
 		double GasMass();
 		double ColdGasMass();
+		double HotGasMass();
 		double StarMass();
 		void CGMOperations();
 
@@ -75,4 +77,6 @@ class Galaxy
 		double BrightestStar;
 		int ParallelBars = 0;
 		
+
+		std::vector<double> IterativeFit(const std::vector<double> & oldDeltas, const double newMass);
 };

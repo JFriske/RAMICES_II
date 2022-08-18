@@ -32,3 +32,15 @@ RAMICES_II*
 *.exe
 *.out
 *.app
+
+# Output
+*.pdf
+<<<<<<< HEAD
+
+*config/NucDiskOldParams/*
+*checkpoint.ipynb
+*Untitled.ipynb*
+Testing/metplanesNucDiskNoAGB.pdf
+Testing/NucDiskGradientNucDiskNoAGB.pdf
+=======
+>>>>>>> 735f43e87c2238bd1fe967c1786c2972f9a0f472

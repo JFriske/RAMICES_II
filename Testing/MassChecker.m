@@ -2,7 +2,7 @@ set(groot, 'defaultAxesTickLabelInterpreter','latex'); set(groot, 'defaultLegend
 set(0,'defaultTextInterpreter','latex');
 set(0,'defaultAxesFontSize',28);
 
-files = "../Output/" + ["Calibration"] + "/Mass.dat";
+files = "../Output/" + ["NucDiskTest"] + "/Mass.dat";
 
 for i = 1:length(files)
     figure(i);
@@ -80,8 +80,8 @@ function plotMassFile(fileName)
     w = 1;
     sol = 8.2;
     hold on;
-    fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
-    ylim([1e-6,1])
+    %fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
+    
     
     ylim([1e-6,1])
     % legend(ts);
@@ -98,7 +98,7 @@ function plotMassFile(fileName)
 %     w = 0.5;
 %     sol = 8;
     hold on;
-    fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
+    %fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
     ylim([1e-6,1])
     hold off;
     set(gca,'yscale','log');
@@ -113,7 +113,7 @@ function plotMassFile(fileName)
 %     w = 0.5;  
 %     sol = 8;
     hold on;
-    fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
+    %fill([sol-w/2,sol-w/2,sol+w/2,sol+w/2],[trueBottom,trueTop,trueTop,trueBottom],[0.7,0.7,0.7],'FaceAlpha',0.7);
     ylim([1e-6,10])
     grid on;
     nexttile(4);

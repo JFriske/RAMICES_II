@@ -15,7 +15,7 @@ void Galaxy::Evolve()
 	for (int timestep = 0; timestep < finalStep; ++timestep)
 	{
 		//~ std::cout << "Time " << timestep << std::endl
-		IGMOperations();
+		CGMOperations();
 		Infall(t);
 
 		//~ std::cout << "Computing scattering" << std::endl;
@@ -83,6 +83,7 @@ void Galaxy::SynthesiseObservations()
 		Data.ProgressBar(bars, i, Rings.size());
 	}
 }
+
 
 // Galactic Constructor
 Galaxy::Galaxy(InitialisedData &data) : Data(data), Param(data.Param), IGM(GasReservoir::Primordial(data.Param.Galaxy.IGM_Mass, data.Param))
@@ -373,6 +374,7 @@ void Galaxy::InsertInfallingGas(int ring, double amount)
 		double maxDepletion = Param.Migration.MaxStealFraction;
 		inflowMass = std::min(inflowMass, maxDepletion * Rings[ring + 1].Gas.ColdMass());
 		//~ std::cout << inflowMass << std::endl;
+
 		Rings[ring].Gas.TransferColdFrom(Rings[ring + 1].Gas, inflowMass);
 		// if some part of the budget was missed because of the std::min above, then make up the deficit from the IGM
 		remainingMass = amount - inflowMass;
@@ -381,7 +383,7 @@ void Galaxy::InsertInfallingGas(int ring, double amount)
 	{
 		remainingMass = amount;
 	}
-	Rings[ring].Gas.Absorb(IGM.AccretionStream(remainingMass));
+	Rings[ring].Gas.Absorb(CGM.AccretionStream(remainingMass));
 }
 
 std::vector<double> Galaxy::IterativeFit(const std::vector<double> &oldDeltas, const double newMass)
@@ -544,10 +546,11 @@ void Galaxy::ScatterYields(int time, int ringstart, int ringend)
 					dispersionContinues = false;
 				}
 			}
-
-			if (Param.Galaxy.IGMAbsorbing.Value)
+			
+			if (Param.Galaxy.CGMAbsorbing.Value)
 			{
-				Rings[i].IGMBuffer.Absorb(Rings[i].Stars.YieldsFrom(t), 1.0 - absorbFrac);
+				Rings[i].CGMBuffer.Absorb(Rings[i].Stars.YieldsFrom(t),1.0 - absorbFrac); 
+
 			}
 		}
 	}
@@ -617,9 +620,12 @@ void Galaxy::SaveState_Mass(double t)
 		double Mbh = Mrr.BH / 1e9;
 		double Mr = Mrr.Total / 1e9;
 		double Mt = Ms + Mc + Mh + Mr;
-		double Migm = IGM.Mass();
-		std::vector<double> vals = {Rings[i].Radius, Rings[i].Area, Mt, Ms, Mc, Mh, Mwd, Mns, Mbh, Migm};
+
+		double Mcgm = CGM.Mass();
+		std::vector<double> vals = {Rings[i].Radius, Rings[i].Area,Mt,Ms,Mc,Mh,Mwd,Mns,Mbh,Mcgm};
+    
 		output << t;
+		output << ", " << i ;
 		for (int j = 0; j < vals.size(); ++j)
 		{
 			output << ", " << vals[j];
@@ -630,7 +636,7 @@ void Galaxy::SaveState_Mass(double t)
 }
 std::string Galaxy::MassHeaders()
 {
-	return "Time, Radius, SurfaceArea, TotalMass, StellarMass, ColdGasMass, HotGasMass, WDMass, NSMass, BHMass,IGMMass";
+	return "Time, RingIndex, Radius, SurfaceArea, TotalMass, StellarMass, ColdGasMass, HotGasMass, WDMass, NSMass, BHMass, CGMMass";
 }
 
 void Galaxy::SaveState_Enrichment(double t)
@@ -777,13 +783,13 @@ void Galaxy::StellarSynthesis(int ringstart, int ringend, int threadID)
 	}
 }
 
-void Galaxy::IGMOperations()
+void Galaxy::CGMOperations()
 {
-	IGM.PassiveCool(Param.Meta.TimeStep, true);
-
+	CGM.PassiveCool(Param.Meta.TimeStep,true);
+	
 	for (int i = 0; i < Rings.size(); ++i)
 	{
-		IGM.Absorb(Rings[i].IGMBuffer);
-		Rings[i].IGMBuffer.Wipe();
+		CGM.Absorb(Rings[i].CGMBuffer);
+		Rings[i].CGMBuffer.Wipe();
 	}
 }

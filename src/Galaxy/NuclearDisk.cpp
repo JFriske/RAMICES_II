@@ -278,8 +278,8 @@ void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string ga
 
 void NuclearDisk::getBarInflow()
 {
-	std::string galaxyFileCold = "Output/" + galaxyDir + "/Enrichment_Absolute_ColdGas.dat";
-	std::string galaxyFileHot = "Output/" + galaxyDir + "/Enrichment_Absolute_HotGas.dat";
+	std::string galaxyFileCold =  galaxyDir + "/Enrichment_Absolute_ColdGas.dat";
+	std::string galaxyFileHot =   galaxyDir + "/Enrichment_Absolute_HotGas.dat";
 
 	Data.UrgentLog(galaxyFileCold + '\n');
 

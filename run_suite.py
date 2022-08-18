@@ -22,7 +22,7 @@ coldtransferlossarr = [0.5]
 
 suitename = "NucDiskOldParams"
 
-
+outputdir = "/disk/xray8/jksf/ChemicalEvolution/"
 #launchmake = subprocess.Popen("../../make", shell=True, stdout=subprocess.PIPE)
 #launchmake.wait()
 
@@ -37,7 +37,7 @@ for fhsn1a in fhsn1aarr:
                     filenameglob = "Global_fhsn1a{:.3f}_fhccsn{:.3f}_fhnsm{:.3f}_fhagb{:.3f}_ejectglob{:.3f}".format(fhsn1a, fhccsn, fhnsm, fhagb, ejectglob) 
                     with open ("config/"+ suitename +"/" + filenameglob+".config", "w") as outfile:
                         with open ("config/"+ suitename +"/globalbaseconfig.config") as infile:
-                            outfile.write("output Output/"+suitename + "/" +filenameglob+"\n")
+                            outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenameglob+"\n")
                             outfile.write(infile.read())
                             outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
                             outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))
@@ -62,8 +62,8 @@ for fhsn1a in fhsn1aarr:
                                 filenamenuc = "Nuclear_fhsn1a{:.3f}_fhccsn{:.3f}_fhnsm{:.3f}_fhagb{:.3f}_ejectglob{:.3f}_ejectnuc{:.3f}".format(fhsn1a, fhccsn, fhnsm, fhagb, ejectglob, ejectnuc) 
                                 with open ("config/"+ suitename +"/" +filenamenuc+ ".config", "w") as outfile:
                                     with open("config/"+ suitename +"/nucbaseconfig.config") as infile:
-                                        outfile.write("output Output/"+suitename + "/" +filenamenuc+ "\n")
-                                        outfile.write("readin-dir "+suitename + "/"  +filenameglob + "\n")
+                                        outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenamenuc+"\n")
+                                        outfile.write("readin-dir "+outputdir+ "Output/"+suitename + "/"  +filenameglob + "\n")
                                         outfile.write(infile.read())
                                         outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
                                         outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))

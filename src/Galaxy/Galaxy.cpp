@@ -494,7 +494,7 @@ void Galaxy::ComputeScattering(int t)
 
 void Galaxy::ScatterYields(int time, int ringstart, int ringend)
 {
-	double absorbFrac = 1.0; // qq 1.0 - Param.Stellar.EjectionFraction;
+	double absorbFrac =  1.0 - Param.Stellar.EjectionFraction;
 
 	for (int t = 0; t <= time; ++t)
 	{

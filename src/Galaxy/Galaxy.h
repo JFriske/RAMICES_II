@@ -23,7 +23,7 @@ class Galaxy
 	protected:
 		std::vector<std::thread> Threads;
 		std::vector<MigrationMatrix> Migrator;
-		GasReservoir IGM;
+		GasReservoir CGM;
 		const GlobalParameters & Param;
 		
 		void LaunchParallelOperation(int time,int nOperations,ParallelJob type);
@@ -52,7 +52,7 @@ class Galaxy
 		double ColdGasMass();
 		double HotGasMass();
 		double StarMass();
-		void IGMOperations();
+		void CGMOperations();
 
 		double RelicMass();
 		double Mass();

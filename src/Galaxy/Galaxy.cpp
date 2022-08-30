@@ -86,7 +86,7 @@ void Galaxy::SynthesiseObservations()
 
 
 // Galactic Constructor
-Galaxy::Galaxy(InitialisedData &data) : Data(data), Param(data.Param), IGM(GasReservoir::Primordial(data.Param.Galaxy.IGM_Mass, data.Param))
+Galaxy::Galaxy(InitialisedData &data) : Data(data), Param(data.Param), CGM(GasReservoir::Primordial(data.Param.Galaxy.CGM_Mass, data.Param))
 {
 
 	int currentRings = 0;
@@ -376,7 +376,7 @@ void Galaxy::InsertInfallingGas(int ring, double amount)
 		//~ std::cout << inflowMass << std::endl;
 
 		Rings[ring].Gas.TransferColdFrom(Rings[ring + 1].Gas, inflowMass);
-		// if some part of the budget was missed because of the std::min above, then make up the deficit from the IGM
+		// if some part of the budget was missed because of the std::min above, then make up the deficit from the CGM
 		remainingMass = amount - inflowMass;
 	}
 	else

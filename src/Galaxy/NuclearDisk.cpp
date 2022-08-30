@@ -124,7 +124,7 @@ void NuclearDisk::LoseHotGas()
 // accretion in the begining -> what to do with ring 0?
 double NuclearDisk::InfallMass(int timestep)
 {
-	double accretedInflow = IGM.ColdMass() * (1.0 - Param.NuclearDisk.ColdGasTransportLoss) + IGM.HotMass() * (1.0 - Param.NuclearDisk.HotGasTransportLoss);
+	double accretedInflow = CGM.ColdMass() * (1.0 - Param.NuclearDisk.ColdGasTransportLoss) + CGM.HotMass() * (1.0 - Param.NuclearDisk.HotGasTransportLoss);
 
 	double coldbarmass = 0;
 	for (int i = 0; i < ProcessCount; ++i)
@@ -135,7 +135,7 @@ double NuclearDisk::InfallMass(int timestep)
 		}
 	}
 
-	// std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << IGM.ColdMass()<< ' ' << IGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
+	// std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << CGM.ColdMass()<< ' ' << CGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
 	return accretedInflow / timestepsPerRing[timestep];
 }
 
@@ -143,12 +143,12 @@ double NuclearDisk::InfallMass(int timestep)
  */
 void NuclearDisk::updateBarInflowResevoir(int timestep)
 {
-	IGM.Wipe();
+	CGM.Wipe();
 
 	// for (int i = 0; i < Rings.size(); ++i)
 	// {
-	// 	// IGM.Absorb(Rings[i].IGMBuffer);
-	// 	Rings[i].IGMBuffer.Wipe();
+	// 	// CGM.Absorb(Rings[i].CGMBuffer);
+	// 	Rings[i].CGMBuffer.Wipe();
 	// }
 
 	for (int p = 0; p < ProcessCount; ++p)
@@ -164,7 +164,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 
 		GasStream processGasStream = GasStream(source, hotGas, coldGas);
 
-		IGM[source].Absorb(processGasStream);
+		CGM[source].Absorb(processGasStream);
 		// qq why does gas resevoir have a Paramsobject that is not initialised?
 	}
 	// std::cout << std::endl;
@@ -176,7 +176,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 		elemmass += coldBarInflow[timestep][0][e];
 	}
 
-	//std::cout << timestep * 0.03 << " IGM " << IGM[(SourceProcess)(0)].ColdMass() << ' ' << IGM.ColdMass() << ' ' << elemmass << std::endl;
+	//std::cout << timestep * 0.03 << " CGM " << CGM[(SourceProcess)(0)].ColdMass() << ' ' << CGM.ColdMass() << ' ' << elemmass << std::endl;
 }
 
 // Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes

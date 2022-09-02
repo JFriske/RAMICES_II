@@ -155,7 +155,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 	{
 		// std::cout << timestep << " process ";
 
-		// std::cout << coldBarInflow[timestep][p][Magnesium] << ' ';
+		//std::cout << coldBarInflow[timestep][p][Magnesium] << ' ';
 
 		Gas coldGas = Gas(coldBarInflow[timestep][p]);
 		Gas hotGas = Gas(hotBarInflow[timestep][p]);
@@ -176,7 +176,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 		elemmass += coldBarInflow[timestep][0][e];
 	}
 
-	//std::cout << timestep * 0.03 << " CGM " << CGM[(SourceProcess)(0)].ColdMass() << ' ' << CGM.ColdMass() << ' ' << elemmass << std::endl;
+	// std::cout << timestep * 0.03 << " CGM " << CGM[(SourceProcess)(0)].ColdMass() << ' ' << CGM.ColdMass() << ' ' << elemmass << std::endl;
 }
 
 // Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes
@@ -184,6 +184,11 @@ std::vector<std::vector<double>> NuclearDisk::readAndSliceInput(std::vector<std:
 {
 
 	std::vector<std::vector<double>> processVectors;
+
+	// for (int i = 0; i < stringVector.size(); ++i){
+	// 	std::cout<< stringVector[i]<<" ";
+	// }
+	// std::cout<<std::endl;
 
 	stringVector.erase(stringVector.begin(), stringVector.begin() + 3);
 

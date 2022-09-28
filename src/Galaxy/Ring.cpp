@@ -24,7 +24,7 @@ void Ring::TimeStep(int t)
 	MetCheck("Start of internal loop");
 	Cool();
 	
-	MakeStars();
+	MakeStars(t);
 
 	if (t < Param.Meta.SimulationSteps-2)
 	{
@@ -34,9 +34,9 @@ void Ring::TimeStep(int t)
 	MetCheck("End of internal loop");
 }
 
-void Ring::MakeStars()
+void Ring::MakeStars(int t)
 {
-	Stars.Form(Gas,CGMBuffer);
+	Stars.Form(Gas,CGMBuffer, t);
 }
 void Ring::KillStars(int time)
 {

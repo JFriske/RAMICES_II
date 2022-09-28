@@ -80,14 +80,20 @@ double StarReservoir::SFR_GasLoss(double coldMass, double hotMass, double ejectF
 	
 }
 
-void StarReservoir::Form(GasReservoir & gas, GasReservoir & cgm)
+void StarReservoir::Form(GasReservoir & gas, GasReservoir & cgm, int t)
 {
 	//compute how much cold gas mass is lost to star formation (through stars + feedback)
 	const double initMass = gas.ColdMass();
 	double hotMass = gas.HotMass();
 	double ejectFactor = std::min(1.0,Param.Thermal.FeedbackEjectFactor * (1.0 + Param.Thermal.ChimneyFactor * hotMass/initMass));
 	double gasLossMass = SFR_GasLoss(initMass,hotMass,ejectFactor);
-		
+
+	// if(t != 400){
+	// 	gasLossMass = 0.0;
+	// }
+
+	//std::cout<< t<< " "<<initMass<< " " << hotMass<< " "<< ejectFactor<< " "<<gasLossMass<<"\n";
+
 	//compute how much goes to stars vs hot gas
 	double heatFrac = Param.Stellar.FeedbackFactor;
 	double starMassFormed = 1.0/(1.0 + heatFrac) * gasLossMass;

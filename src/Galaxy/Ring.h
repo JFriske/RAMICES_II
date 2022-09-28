@@ -20,7 +20,7 @@ class Ring
 		StarReservoir Stars;
 		GasReservoir Gas;
 		GasReservoir CGMBuffer;
-		void MakeStars();
+		void MakeStars(int t);
 		void KillStars(int time);
 		void Cool();
 		void TimeStep(int t);

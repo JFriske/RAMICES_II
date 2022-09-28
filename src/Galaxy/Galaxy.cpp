@@ -120,7 +120,9 @@ void Galaxy::RingEvolve(int timestep, int ringStart, int ringEnd)
 {
 	for (int i = ringStart; i < ringEnd; ++i)
 	{
+		//std::cout<< i << " "<<Rings[i].Gas.ColdMass()<<" " << timestep<< "\n";
 		Rings[i].TimeStep(timestep);
+		//std::cout<< i << " "<<Rings[i].Gas.ColdMass()<<" " << timestep<< "end\n";
 	}
 }
 
@@ -370,6 +372,7 @@ void Galaxy::InsertInfallingGas(int ring, double amount)
 		double nextwidth = Rings[ring + 1].Width;
 		ratio = bilitewskiRatio(a_factor, b_factor, radius, width, nextwidth, Param.Galaxy.Radius);
 		double inflowMass = ratio / (1 + ratio) * amount;
+		//std::cout<<"inflowmass " << inflowMass << " "<< ratio<<" " << amount<< "\n";
 		// check that we do not remove more gas than is actually present
 		double maxDepletion = Param.Migration.MaxStealFraction;
 		inflowMass = std::min(inflowMass, maxDepletion * Rings[ring + 1].Gas.ColdMass());
@@ -394,6 +397,7 @@ std::vector<double> Galaxy::IterativeFit(const std::vector<double> &oldDeltas, c
 	double correctedAmount = 0;
 	for (int i = 0; i < n; ++i)
 	{
+		//std::cout<< oldDeltas[i] << "oldDeltas \n";
 		double proposal = std::max(0.0, oldDeltas[i]);
 		correctedAmount += proposal;
 		newDeltas[i] = proposal;
@@ -401,9 +405,11 @@ std::vector<double> Galaxy::IterativeFit(const std::vector<double> &oldDeltas, c
 
 	double correctionFactor = newMass / (correctedAmount);
 
+	//std::cout<< "corrfactor "<<correctionFactor<<"\n";
 	double sumsum = 0;
-	if (!std::isnan(correctionFactor))
+	if (!std::isnan(correctionFactor)&&!std::isinf(correctionFactor))
 	{
+		//std::cout<< "in nan corrfactor "<<correctionFactor<<"\n";
 		for (int i = 0; i < n; ++i)
 		{
 			newDeltas[i] *= correctionFactor;

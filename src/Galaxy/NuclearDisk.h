@@ -29,6 +29,10 @@ class NuclearDisk : public Galaxy
         double InfallMass(int timestep);
         void LoseHotGas();
 
+        void CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot);
+        
+        void SaveState_CGM(double t, bool early);
+
         void checkTimeResolution(std::string galaxyFileCold, std::string  galaxyFileHot );
         std::vector<double> barGrowthFunction();
 

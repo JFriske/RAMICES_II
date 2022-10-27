@@ -53,6 +53,13 @@ class Galaxy
 		double HotGasMass();
 		double StarMass();
 		void CGMOperations();
+		void SaveState_CGM(double t);
+		void CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot);
+
+
+		void neatLogLog(double value, std::stringstream & stream);
+		void neatLogAbs(double value, std::stringstream & stream);
+
 
 		double RelicMass();
 		double Mass();

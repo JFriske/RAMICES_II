@@ -19,6 +19,8 @@ void NuclearDisk::Evolve()
 		// std::cout << "Time " << timestep << std::endl;
 
 		updateBarInflowResevoir(timestep);
+		SaveState_CGM(t,true);
+
 
 		//		if (t < 9 || t > 9.5){
 		//std::cout<<'here;'<<std::endl;
@@ -50,6 +52,8 @@ void NuclearDisk::Evolve()
 
 		Data.ProgressBar(currentBars, timestep, finalStep);
 		SaveState(t);
+
+		SaveState_CGM(t,false);
 		t += Param.Meta.TimeStep;
 	}
 }
@@ -62,6 +66,10 @@ void NuclearDisk::Infall(double t, int timestep)
 	double Rd = GasScaleLength(t);
 	double oldGas = ColdGasMass();
 	double predictedInfall = InfallMass(timestep);
+
+	// if (t >7.0){
+	// 	predictedInfall = 0.0;
+	// }
 
 	// std::cout << t << ' ' << timestep << ' ' << predictedInfall << ' ' << oldGas << ' ' << predictedInfall / oldGas << std::endl;
 
@@ -126,18 +134,172 @@ double NuclearDisk::InfallMass(int timestep)
 {
 	double accretedInflow = CGM.ColdMass() * (1.0 - Param.NuclearDisk.ColdGasTransportLoss) + CGM.HotMass() * (1.0 - Param.NuclearDisk.HotGasTransportLoss);
 
-	double coldbarmass = 0;
-	for (int i = 0; i < ProcessCount; ++i)
-	{
-		for (int e = 0; e < ElementCount; ++e)
-		{
-			coldbarmass += hotBarInflow[timestep][i][e];
-		}
-	}
+	// double coldbarmass = 0;
+	// for (int i = 0; i < ProcessCount; ++i)
+	// {
+	// 	for (int e = 0; e < ElementCount; ++e)
+	// 	{
+	// 		coldbarmass += hotBarInflow[timestep][i][e];
+	// 	}
+	// }
 
 	// std::cout<<timestep << ' ' << accretedInflow  << ' ' <<accretedInflow/timestepsPerRing[timestep]<< ' ' << CGM.ColdMass()<< ' ' << CGM.HotMass() << ' '<< coldbarmass 	<<std::endl;
 	return accretedInflow / timestepsPerRing[timestep];
 }
+
+
+
+void NuclearDisk::SaveState_CGM(double t, bool early){
+	std::stringstream outputAbsoluteCold_CGM;
+	std::stringstream outputLogarithmicCold_CGM;
+	std::stringstream outputAbsoluteHot_CGM;
+	std::stringstream outputLogarithmicHot_CGM;
+
+	int tt = round(t / Param.Meta.TimeStep);
+
+	CGM_SaveChemicalHistory(tt, outputAbsoluteCold_CGM, outputLogarithmicCold_CGM, outputAbsoluteHot_CGM, outputLogarithmicHot_CGM);
+
+
+	if(early)
+	{
+		JSL::writeStringToFile(Param.Output.LogarithmicCGMColdGasFileEarly, outputLogarithmicCold_CGM.str());
+		JSL::writeStringToFile(Param.Output.LogarithmicCGMHotGasFileEarly, outputLogarithmicHot_CGM.str());
+	}
+	else
+	{
+		JSL::writeStringToFile(Param.Output.LogarithmicCGMColdGasFile, outputLogarithmicCold_CGM.str());
+		JSL::writeStringToFile(Param.Output.LogarithmicCGMHotGasFile, outputLogarithmicHot_CGM.str());
+	}
+}
+
+void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot)
+{	
+	// std::cout<<"time " << t << " in CGM Log\n";
+
+	std::vector<std::vector<double>> HotBuffer(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
+	std::vector<std::vector<double>> ColdBuffer(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
+		
+	std::string basic = "";
+
+	if (t == 0)
+	{
+
+		std::string headers = "Time";
+		for (int p = -1; p < ProcessCount; ++p)
+		{
+			std::string processName;
+			if (p > -1)
+			{
+					processName = Param.Yield.ProcessNames[p];
+			}
+			else
+			{
+				processName = "Total";
+			}
+			for (int e = 0; e < ElementCount; ++e)
+			{
+				std::string elementName = Param.Element.ElementNames[e];
+			
+			
+				headers += ", " + processName+ "_" + elementName;
+			}
+		}
+		basic = headers + ", ColdGasMass, HotGasMass, TotalMass, StepsPerRing \n";
+		
+	}
+
+
+	basic += std::to_string(t*Param.Meta.TimeStep) ;
+	
+	absoluteStreamCold << basic;
+	logarithmicStreamCold  << basic;
+	absoluteStreamHot   << basic;
+	logarithmicStreamHot   << basic;
+	
+
+	// std::cout<<"time " << t << "bef in CGM Log\n";
+
+	const std::vector<GasStream> & target = CGM.Composition();
+
+	// std::cout<<"time " << t << "after in CGM Log\n";
+	
+	double coldMass = 0;
+	double hotMass = 0;
+	for (int p = 0; p < ProcessCount; ++p)
+	{
+		double processCold = target[p].ColdMass();
+		double processHot = target[p].HotMass();
+
+		// std::cout<< processCold << " " << processHot<< "\n";
+		
+		coldMass += processCold;
+		hotMass += processHot;
+		for (int e = 0; e < ElementCount; ++e)
+		{
+			ElementID elem = (ElementID)e;
+			double cold = target[p].Cold(elem);
+			double hot = target[p].Hot(elem);
+			
+		// std::cout<< cold << " " << hot << " " << p << " "<< e<< "\n";
+
+		// std::cout<< ColdBuffer[p][e]<<" "<< HotBuffer[p][e]<<"\n";
+
+			if (p == 0)
+			{
+				// std::cout<< ColdBuffer[p][e]<<" "<< HotBuffer[p][e]<<"\n";
+				ColdBuffer[p][e] = 0;
+				HotBuffer[p][e] = 0;
+			}
+			// std::cout<< " here \n";
+			ColdBuffer[0][e] += cold;
+			HotBuffer[0][e] += hot;
+			ColdBuffer[p+1][e] = cold/processCold;
+			HotBuffer[p+1][e] = hot/processHot;
+		}
+	} 
+	for (int e = 0; e < ElementCount; ++e)
+	{
+		ColdBuffer[0][e] /= (coldMass+1e-88);
+		HotBuffer[0][e] /= (hotMass+1e-88);
+	}
+	
+
+	for (int p = 0; p < ProcessCount + 1; ++p)
+	{
+		for (int e = 0; e < ElementCount; ++e)
+		{
+			double coldCorrect = coldMass;
+			double hotCorrect = hotMass;
+			if (p > 0)
+			{
+				coldCorrect = target[p-1].ColdMass();
+				hotCorrect = target[p-1].HotMass();
+			}
+
+
+			neatLogAbs(ColdBuffer[p][e] * coldCorrect, absoluteStreamCold);
+			neatLogAbs(HotBuffer[p][e] * hotCorrect, absoluteStreamHot);
+					
+			double logValueCold = log10(ColdBuffer[p][e] / Param.Element.SolarAbundances[e]);
+			double logValueHot = log10(HotBuffer[p][e]/Param.Element.SolarAbundances[e]);
+			
+			neatLogLog(logValueCold,logarithmicStreamCold);
+			neatLogLog(logValueHot,logarithmicStreamHot);
+	
+		}
+	}
+
+
+	absoluteStreamCold << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t] << "\n";
+	logarithmicStreamCold  << ", "<< CGM.ColdMass()/ timestepsPerRing[t] <<", " <<CGM.HotMass()/ timestepsPerRing[t]<<", "<< CGM.Mass()/ timestepsPerRing[t]<< ", " << timestepsPerRing[t]<< "\n";
+	// std::cout  << "rel "<< CGM.ColdMass()/ timestepsPerRing[t] <<", " <<CGM.HotMass()/ timestepsPerRing[t]<<", "<< CGM.Mass()/ timestepsPerRing[t]<< ", " << timestepsPerRing[t]<< "\n";
+	// std::cout  << "abs "<< CGM.ColdMass()<<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t]<< "\n";
+	absoluteStreamHot   << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t] << "\n";
+	logarithmicStreamHot  << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t]<< "\n";
+}
+
+
+
 
 /*put in: hotGasLoss, coldGasLoss
  */
@@ -176,7 +338,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 		elemmass += coldBarInflow[timestep][0][e];
 	}
 
-	// std::cout << timestep * 0.03 << " CGM " << CGM[(SourceProcess)(0)].ColdMass() << ' ' << CGM.ColdMass() << ' ' << elemmass << std::endl;
+	// std::cout << timestep * 0.01 << " CGM " << CGM[(SourceProcess)(0)].ColdMass() << ' ' << CGM.ColdMass() << ' ' << elemmass << std::endl;
 }
 
 // Reads in a line from the output files and converts them to double vectors representing the gas streams for different processes

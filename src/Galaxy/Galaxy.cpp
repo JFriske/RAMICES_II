@@ -87,7 +87,7 @@ void Galaxy::SynthesiseObservations()
 
 
 // Galactic Constructor
-Galaxy::Galaxy(InitialisedData &data) : Data(data), Param(data.Param), CGM(GasReservoir::Primordial(data.Param.Galaxy.CGM_Mass, data.Param))
+Galaxy::Galaxy(InitialisedData &data) : Data(data), Param(data.Param), CGM(GasReservoir::CGM_polluted(data.Param.Galaxy.CGM_Mass, data.Param))
 {
 
 	int currentRings = 0;
@@ -958,12 +958,23 @@ void Galaxy::StellarSynthesis(int ringstart, int ringend, int threadID)
 	}
 }
 
+
+
 void Galaxy::CGMOperations()
 {
 	double cgmEndMass = Param.Galaxy.CGM_Mass_End;
 	double cgmGrowthPerStep = (cgmEndMass - Param.Galaxy.CGM_Mass )/Param.Meta.SimulationSteps;
 
-	GasReservoir igmGas = GasReservoir::Primordial(cgmGrowthPerStep,Param);
+	//copy cgm and then size down to right mass
+	GasReservoir igmGas = CGM;
+
+
+	double mass = igmGas.Mass();
+
+	igmGas.Deplete(mass - cgmGrowthPerStep);
+
+	
+	//GasReservoir igmGas = GasReservoir::CGM_polluted(cgmGrowthPerStep,Param);
 
 	CGM.PassiveCool(Param.Meta.TimeStep,true);
 	

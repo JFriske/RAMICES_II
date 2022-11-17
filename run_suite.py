@@ -76,7 +76,7 @@ for fhsn1a in fhsn1aarr:
                             for ejectnuc in ejectnucleararr:
                                 for hottransferloss in hottransferlossarr:
                                     for coldtransferloss in coldtransferlossarr:
-                                        filenamenuc = f"Nuclear_fhsn1a{fhsn1a:.3f}_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectglob:.3f}_cgmstart{cgmstart:.0f}_inflowMcMillan{McMillanInflow}"
+                                        filenamenuc = f"Nuclear_fhsn1a{fhsn1a:.3f}_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}_cgmstart{cgmstart:.0f}_inflowMcMillan{McMillanInflow}"
                                         with open ("config/"+ suitename +"/" +filenamenuc+ ".config", "w") as outfile:
                                             with open("config/"+ suitename +"/nucbaseconfig.config") as infile:
                                                 outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenamenuc+"\n")

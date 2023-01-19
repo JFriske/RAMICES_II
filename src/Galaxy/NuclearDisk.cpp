@@ -19,41 +19,39 @@ void NuclearDisk::Evolve()
 		// std::cout << "Time " << timestep << std::endl;
 
 		updateBarInflowResevoir(timestep);
-		SaveState_CGM(t,true);
-
+		SaveState_CGM(t, true);
 
 		//		if (t < 9 || t > 9.5){
-		//std::cout<<'here;'<<std::endl;
+		// std::cout<<'here;'<<std::endl;
 		Infall(t, timestep);
-			//	}
-		
+		//	}
 
 		// std::cout << "Computing scattering" << std::endl;
 		ComputeScattering(timestep);
 
-		//std::cout<<"hatgasmass 1 "<<HotGasMass()<<std::endl;
+		// std::cout<<"hatgasmass 1 "<<HotGasMass()<<std::endl;
+
+		LoseHotGas();
 
 		//  std::cout << "Computing rings" << std::endl;
 		LaunchParallelOperation(timestep, Rings.size(), RingStep);
 
-		//std::cout<<"hatgasmass 2 "<<HotGasMass()<<std::endl;
-		//  std::cout << "Computing scattering pt 2" << std::endl;
+		// std::cout<<"hatgasmass 2 "<<HotGasMass()<<std::endl;
+		//   std::cout << "Computing scattering pt 2" << std::endl;
 		if (timestep < finalStep)
 		{
 			LaunchParallelOperation(timestep, Rings.size(), Scattering);
 			ScatterGas(timestep);
 		}
 
-		LoseHotGas();
-
-		//std::cout<<"hatgasmass end "<<HotGasMass()<<std::endl;
+		// std::cout<<"hatgasmass end "<<HotGasMass()<<std::endl;
 
 		//  std::cout << "Computing savestate" << std::endl;
 
 		Data.ProgressBar(currentBars, timestep, finalStep);
 		SaveState(t);
 
-		SaveState_CGM(t,false);
+		SaveState_CGM(t, false);
 		t += Param.Meta.TimeStep;
 	}
 }
@@ -120,13 +118,13 @@ void NuclearDisk::Infall(double t, int timestep)
 
 void NuclearDisk::LoseHotGas()
 {
-	//std::cout <<HotGasMass()<<' ';
+	// std::cout <<HotGasMass()<<' ';
 	for (int r = 0; r < Param.Galaxy.RingCount; ++r)
 	{
 		double hotMass = Rings[r].Gas.HotMass();
 		Rings[r].Gas.Deplete(0.0, Param.NuclearDisk.HotGasLossTimeStep * hotMass);
 	}
-	 //std::cout<<HotGasMass()<<std::endl;
+	// std::cout<<HotGasMass()<<std::endl;
 }
 
 // accretion in the begining -> what to do with ring 0?
@@ -147,9 +145,8 @@ double NuclearDisk::InfallMass(int timestep)
 	return accretedInflow / timestepsPerRing[timestep];
 }
 
-
-
-void NuclearDisk::SaveState_CGM(double t, bool early){
+void NuclearDisk::SaveState_CGM(double t, bool early)
+{
 	std::stringstream outputAbsoluteCold_CGM;
 	std::stringstream outputLogarithmicCold_CGM;
 	std::stringstream outputAbsoluteHot_CGM;
@@ -159,8 +156,7 @@ void NuclearDisk::SaveState_CGM(double t, bool early){
 
 	CGM_SaveChemicalHistory(tt, outputAbsoluteCold_CGM, outputLogarithmicCold_CGM, outputAbsoluteHot_CGM, outputLogarithmicHot_CGM);
 
-
-	if(early)
+	if (early)
 	{
 		JSL::writeStringToFile(Param.Output.LogarithmicCGMColdGasFileEarly, outputLogarithmicCold_CGM.str());
 		JSL::writeStringToFile(Param.Output.LogarithmicCGMHotGasFileEarly, outputLogarithmicHot_CGM.str());
@@ -172,13 +168,13 @@ void NuclearDisk::SaveState_CGM(double t, bool early){
 	}
 }
 
-void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot)
-{	
+void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream &absoluteStreamCold, std::stringstream &logarithmicStreamCold, std::stringstream &absoluteStreamHot, std::stringstream &logarithmicStreamHot)
+{
 	// std::cout<<"time " << t << " in CGM Log\n";
 
-	std::vector<std::vector<double>> HotBuffer(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
-	std::vector<std::vector<double>> ColdBuffer(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
-		
+	std::vector<std::vector<double>> HotBuffer(ProcessCount + 1, std::vector<double>(ElementCount, 0.0));
+	std::vector<std::vector<double>> ColdBuffer(ProcessCount + 1, std::vector<double>(ElementCount, 0.0));
+
 	std::string basic = "";
 
 	if (t == 0)
@@ -190,7 +186,7 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 			std::string processName;
 			if (p > -1)
 			{
-					processName = Param.Yield.ProcessNames[p];
+				processName = Param.Yield.ProcessNames[p];
 			}
 			else
 			{
@@ -199,30 +195,26 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 			for (int e = 0; e < ElementCount; ++e)
 			{
 				std::string elementName = Param.Element.ElementNames[e];
-			
-			
-				headers += ", " + processName+ "_" + elementName;
+
+				headers += ", " + processName + "_" + elementName;
 			}
 		}
 		basic = headers + ", ColdGasMass, HotGasMass, TotalMass, StepsPerRing \n";
-		
 	}
 
+	basic += std::to_string(t * Param.Meta.TimeStep);
 
-	basic += std::to_string(t*Param.Meta.TimeStep) ;
-	
 	absoluteStreamCold << basic;
-	logarithmicStreamCold  << basic;
-	absoluteStreamHot   << basic;
-	logarithmicStreamHot   << basic;
-	
+	logarithmicStreamCold << basic;
+	absoluteStreamHot << basic;
+	logarithmicStreamHot << basic;
 
 	// std::cout<<"time " << t << "bef in CGM Log\n";
 
-	const std::vector<GasStream> & target = CGM.Composition();
+	const std::vector<GasStream> &target = CGM.Composition();
 
 	// std::cout<<"time " << t << "after in CGM Log\n";
-	
+
 	double coldMass = 0;
 	double hotMass = 0;
 	for (int p = 0; p < ProcessCount; ++p)
@@ -231,7 +223,7 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 		double processHot = target[p].HotMass();
 
 		// std::cout<< processCold << " " << processHot<< "\n";
-		
+
 		coldMass += processCold;
 		hotMass += processHot;
 		for (int e = 0; e < ElementCount; ++e)
@@ -239,10 +231,10 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 			ElementID elem = (ElementID)e;
 			double cold = target[p].Cold(elem);
 			double hot = target[p].Hot(elem);
-			
-		// std::cout<< cold << " " << hot << " " << p << " "<< e<< "\n";
 
-		// std::cout<< ColdBuffer[p][e]<<" "<< HotBuffer[p][e]<<"\n";
+			// std::cout<< cold << " " << hot << " " << p << " "<< e<< "\n";
+
+			// std::cout<< ColdBuffer[p][e]<<" "<< HotBuffer[p][e]<<"\n";
 
 			if (p == 0)
 			{
@@ -253,16 +245,15 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 			// std::cout<< " here \n";
 			ColdBuffer[0][e] += cold;
 			HotBuffer[0][e] += hot;
-			ColdBuffer[p+1][e] = cold/processCold;
-			HotBuffer[p+1][e] = hot/processHot;
+			ColdBuffer[p + 1][e] = cold / processCold;
+			HotBuffer[p + 1][e] = hot / processHot;
 		}
-	} 
+	}
 	for (int e = 0; e < ElementCount; ++e)
 	{
-		ColdBuffer[0][e] /= (coldMass+1e-88);
-		HotBuffer[0][e] /= (hotMass+1e-88);
+		ColdBuffer[0][e] /= (coldMass + 1e-88);
+		HotBuffer[0][e] /= (hotMass + 1e-88);
 	}
-	
 
 	for (int p = 0; p < ProcessCount + 1; ++p)
 	{
@@ -272,37 +263,29 @@ void NuclearDisk::CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStr
 			double hotCorrect = hotMass;
 			if (p > 0)
 			{
-				coldCorrect = target[p-1].ColdMass();
-				hotCorrect = target[p-1].HotMass();
+				coldCorrect = target[p - 1].ColdMass();
+				hotCorrect = target[p - 1].HotMass();
 			}
-
 
 			neatLogAbs(ColdBuffer[p][e] * coldCorrect, absoluteStreamCold);
 			neatLogAbs(HotBuffer[p][e] * hotCorrect, absoluteStreamHot);
-					
+
 			double logValueCold = log10(ColdBuffer[p][e] / Param.Element.SolarAbundances[e]);
-			double logValueHot = log10(HotBuffer[p][e]/Param.Element.SolarAbundances[e]);
-			
-			neatLogLog(logValueCold,logarithmicStreamCold);
-			neatLogLog(logValueHot,logarithmicStreamHot);
-	
+			double logValueHot = log10(HotBuffer[p][e] / Param.Element.SolarAbundances[e]);
+
+			neatLogLog(logValueCold, logarithmicStreamCold);
+			neatLogLog(logValueHot, logarithmicStreamHot);
 		}
 	}
 
-
-	absoluteStreamCold << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t] << "\n";
-	logarithmicStreamCold  << ", "<< CGM.ColdMass()/ timestepsPerRing[t] <<", " <<CGM.HotMass()/ timestepsPerRing[t]<<", "<< CGM.Mass()/ timestepsPerRing[t]<< ", " << timestepsPerRing[t]<< "\n";
+	absoluteStreamCold << ", " << CGM.ColdMass() << ", " << CGM.HotMass() << ", " << CGM.Mass() << ", " << timestepsPerRing[t] << "\n";
+	logarithmicStreamCold << ", " << CGM.ColdMass() / timestepsPerRing[t] << ", " << CGM.HotMass() / timestepsPerRing[t] << ", " << CGM.Mass() / timestepsPerRing[t] << ", " << timestepsPerRing[t] << "\n";
 	// std::cout  << "rel "<< CGM.ColdMass()/ timestepsPerRing[t] <<", " <<CGM.HotMass()/ timestepsPerRing[t]<<", "<< CGM.Mass()/ timestepsPerRing[t]<< ", " << timestepsPerRing[t]<< "\n";
 	// std::cout  << "abs "<< CGM.ColdMass()<<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t]<< "\n";
-	absoluteStreamHot   << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t] << "\n";
-	logarithmicStreamHot  << ", "<< CGM.ColdMass() <<", " <<CGM.HotMass()<<", "<< CGM.Mass()<< ", " << timestepsPerRing[t]<< "\n";
+	absoluteStreamHot << ", " << CGM.ColdMass() << ", " << CGM.HotMass() << ", " << CGM.Mass() << ", " << timestepsPerRing[t] << "\n";
+	logarithmicStreamHot << ", " << CGM.ColdMass() << ", " << CGM.HotMass() << ", " << CGM.Mass() << ", " << timestepsPerRing[t] << "\n";
 }
 
-
-
-
-/*put in: hotGasLoss, coldGasLoss
- */
 void NuclearDisk::updateBarInflowResevoir(int timestep)
 {
 	CGM.Wipe();
@@ -317,7 +300,7 @@ void NuclearDisk::updateBarInflowResevoir(int timestep)
 	{
 		// std::cout << timestep << " process ";
 
-		//std::cout << coldBarInflow[timestep][p][Magnesium] << ' ';
+		// std::cout << coldBarInflow[timestep][p][Magnesium] << ' ';
 
 		Gas coldGas = Gas(coldBarInflow[timestep][p]);
 		Gas hotGas = Gas(hotBarInflow[timestep][p]);
@@ -397,7 +380,7 @@ std::vector<double> NuclearDisk::barGrowthFunction()
 
 		barLengthInRings[timestep] = ringToEmpty;
 
-		 //std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl;
+		// std::cout<< barLength <<  ' ' << ringwidth << ' ' << ringToEmpty<< std::endl;
 	}
 	return barLengthInRings;
 }
@@ -445,8 +428,8 @@ void NuclearDisk::checkTimeResolution(std::string galaxyFileCold, std::string ga
 
 void NuclearDisk::getBarInflow()
 {
-	std::string galaxyFileCold =  galaxyDir + "/Enrichment_Absolute_ColdGas.dat";
-	std::string galaxyFileHot =   galaxyDir + "/Enrichment_Absolute_HotGas.dat";
+	std::string galaxyFileCold = galaxyDir + "/Enrichment_Absolute_ColdGas.dat";
+	std::string galaxyFileHot =  galaxyDir + "/Enrichment_Absolute_HotGas.dat";
 
 	Data.UrgentLog(galaxyFileCold + '\n');
 
@@ -458,12 +441,11 @@ void NuclearDisk::getBarInflow()
 	int sameRingCount = 1;
 	for (int r = 1; r < barLengthInRings.size(); ++r)
 	{
-		//std::cout<< r << " " <<sameRingCount<<std::endl;
-		// currently very last timestep doesn't accrete
+		// std::cout<< r << " " <<sameRingCount<<std::endl;
+		//  currently very last timestep doesn't accrete
 		if (((int)barLengthInRings[r] == (int)barLengthInRings[r - 1]) && (r != barLengthInRings.size() - 1))
 		{
 			++sameRingCount;
-			
 		}
 
 		else if (r == barLengthInRings.size() - 1)
@@ -484,98 +466,155 @@ void NuclearDisk::getBarInflow()
 			sameRingCount = 1;
 		}
 
-		//std::cout<< r << " end " <<sameRingCount<<std::endl;
+		// std::cout<< r << " end " <<sameRingCount<<std::endl;
 	}
 
-	//std::cout<<"HALLO/n";
-    //Data.UrgentLog(galaxyFileCold + '\n');
+	// std::cout<<"HALLO/n";
+	// Data.UrgentLog(galaxyFileCold + '\n');
 
 	// checking whether time resolutions match
 	checkTimeResolution(galaxyFileCold, galaxyFileHot);
 
-
 	int timestep = 0;
-
 	double barLength = barLengthInRings[timestep];
 
-		std::vector<std::vector<double>> lowerRing;
-		std::vector<std::vector<double>> upperRing;
+	std::vector<std::vector<double>> lowerRing;
+	std::vector<std::vector<double>> upperRing;
+
+	// bool to make sure that after the inflow for one timestep has been calculated all rings are cycled through and the new calculations start at the next timestep
+	bool timestepDone = false;
 
 	forLineVectorIn(
 		galaxyFileCold, ', ',
-		//Data.UrgentLog(galaxyFileCold + '\n');
+		// Data.UrgentLog(galaxyFileCold + '\n');
 		std::string compLower = std::to_string((int)barLength) + ',';
-		std::string compUpper = std::to_string((int)(barLength)+1) + ',';
-		if ( (int) barLength == Param.Galaxy.RingCount-1){
-			compUpper = compLower;
+		std::string compUpper = std::to_string((int)(barLength) + 1) + ',';
+
+		// std::cout << timestep * 0.01 << " barLength " << barLength << " complower " << compLower << " compupper " << compUpper << " RingIndex " << FILE_LINE_VECTOR[1] << " timestepdone " << timestepDone << "\n";
+		if (FILE_LINE_VECTOR[1] == std::to_string(Param.NuclearDisk.GalaxyRingCount - 1) + ',') {
+			timestepDone = false;
 		}
 
-		if (FILE_LINE_VECTOR[1] == compLower) {
-			lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
-			//std::cout<<lowerRing[1][1] <<'\n';
-			//Data.UrgentLog(compLower +'\n');
-		}
-		if (FILE_LINE_VECTOR[1] == compUpper) {
-			
-			upperRing = readAndSliceInput(FILE_LINE_VECTOR);
-			//Data.UrgentLog(compUpper +'\n');
-			//Data.UrgentLog(upperRing[0][0] +'\n');
-			std::vector<std::vector<double>> averageRing = lowerRing;
-			for(int p = 0; p <= ProcessCount-1; ++p){
-				//Data.UrgentLog(compUpper +'\n');
-				for (int i = 0; i <= lowerRing[p].size(); ++i){
-					double remainderFraction = fmod(barLength, (int)barLength);
-					//std::cout <<"i "<< i<<" "<< p <<std::endl;
-					if(barLength == 0){remainderFraction = 0;}
-					//std::cout << barLength << " " << (int)barLength << " " <<remainderFraction<<" "<< (upperRing[p][0] - lowerRing[p][0] ) <<std::endl;
-					//Data.UrgentLog(compUpper +'\n');
-					averageRing[p][i] +=  remainderFraction *(upperRing[p][i] - lowerRing[p][i] );
-				}
+		if (timestepDone == false) {
+			if ((int)barLength == Param.Galaxy.RingCount - 1)
+			{
+				compUpper = compLower;
 			}
 
-			coldBarInflow.push_back(averageRing);
-			++timestep;
-		}
-		);
+			if (FILE_LINE_VECTOR[1] == compLower)
+			{
+				// Data.UrgentLog("comp lower\n");
+				lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
+			}
+			if (FILE_LINE_VECTOR[1] == compUpper)
+			{
+				// Data.UrgentLog("compUpper \n");
+				upperRing = readAndSliceInput(FILE_LINE_VECTOR);
 
-	timestep = 0;
+				// percentage of upper ring gas that gets funneled in
+				double remainderFraction = fmod(barLength, (int)barLength);
+				if ((int)barLength == 0)
+				{
+					remainderFraction = 0;
+				}
+				// std::cout << timestep * 0.01 << " barLength " << barLength << " int barLength " << (int)barLength << " remainderFraction " << remainderFraction << " upperRing p0 " << upperRing[0][0] << " " << (upperRing[0][0] - lowerRing[0][0]) << std::endl;
+
+				std::vector<std::vector<double>> averageRing(0);
+
+				for (int p = 0; p <= ProcessCount - 1; ++p)
+				{
+					std::vector<double> process_arr(0);
+
+					for (int i = 0; i <= lowerRing[p].size(); ++i)
+					{
+						// std::cout <<"i "<< i<<" "<< p <<std::endl;
+
+						// std::cout<<remainderFraction*(upperRing[p][i] - lowerRing[p][i])<<"\n";
+
+						double bar_abundance = lowerRing[p][i] + remainderFraction * (upperRing[p][i] - lowerRing[p][i]);
+
+						process_arr.push_back(bar_abundance);
+					}
+					averageRing.push_back(process_arr);
+				}
+
+				coldBarInflow.push_back(averageRing);
+
+				timestepDone = true;
+				++timestep;
+				barLength = barLengthInRings[timestep];
+				// std::cout<< "timestep done \n";
+				// std::cout<< timestep << " " << barLength << " " << (int)barLength << "\n";
+			}
+		});
+
+	timestep = 0;	
+	barLength = barLengthInRings[timestep];
+	timestepDone = false;
+
 	forLineVectorIn(
 		galaxyFileHot, ', ',
-		//Data.UrgentLog(galaxyFileCold + '\n');
+		// Data.UrgentLog(galaxyFileHot + '\n');
 		std::string compLower = std::to_string((int)barLength) + ',';
-		std::string compUpper = std::to_string((int)(barLength)+1) + ',';
-		if ( (int) barLength == Param.Galaxy.RingCount-1){
-			compUpper = compLower;
+		std::string compUpper = std::to_string((int)(barLength) + 1) + ',';
+
+		// std::cout << timestep * 0.01 << " barLength " << barLength << " complower " << compLower << " compupper " << compUpper << " RingIndex " << FILE_LINE_VECTOR[1] << " timestepdone " << timestepDone << "\n";
+		if (FILE_LINE_VECTOR[1] == std::to_string(Param.NuclearDisk.GalaxyRingCount - 1) + ',') {
+			timestepDone = false;
 		}
 
-		if (FILE_LINE_VECTOR[1] == compLower) {
-			lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
-			//std::cout<<lowerRing[1][1] <<'\n';
-			//Data.UrgentLog(compLower +'\n');
-		}
-		if (FILE_LINE_VECTOR[1] == compUpper) {
-			
-			upperRing = readAndSliceInput(FILE_LINE_VECTOR);
-			//Data.UrgentLog(compUpper +'\n');
-			//Data.UrgentLog(upperRing[0][0] +'\n');
-			std::vector<std::vector<double>> averageRing = lowerRing;
-			for(int p = 0; p <= ProcessCount-1; ++p){
-				//Data.UrgentLog(compUpper +'\n');
-				for (int i = 0; i <= lowerRing[p].size(); ++i){
-					double remainderFraction = fmod(barLength, (int)barLength);
-					//std::cout <<"i "<< i<<" "<< p <<std::endl;
-					if(barLength == 0){remainderFraction = 0;}
-					//std::cout << barLength << " " << (int)barLength << " " <<remainderFraction<<" "<< (upperRing[p][0] - lowerRing[p][0] ) <<std::endl;
-					//Data.UrgentLog(compUpper +'\n');
-					averageRing[p][i] +=  remainderFraction *(upperRing[p][i] - lowerRing[p][i] );
-				}
+		if (timestepDone == false) {
+			if ((int)barLength == Param.Galaxy.RingCount - 1)
+			{
+				compUpper = compLower;
 			}
 
-			hotBarInflow.push_back(averageRing);
-			++timestep;
-		}
-		);
+			if (FILE_LINE_VECTOR[1] == compLower)
+			{
+				// Data.UrgentLog("comp lower\n");
+				lowerRing = readAndSliceInput(FILE_LINE_VECTOR);
+			}
+			if (FILE_LINE_VECTOR[1] == compUpper)
+			{
+				// Data.UrgentLog("compUpper \n");
+				upperRing = readAndSliceInput(FILE_LINE_VECTOR);
 
+				// percentage of upper ring gas that gets funneled in
+				double remainderFraction = fmod(barLength, (int)barLength);
+				if ((int)barLength == 0)
+				{
+					remainderFraction = 0;
+				}
+				// std::cout << timestep * 0.01 << " barLength " << barLength << " int barLength " << (int)barLength << " remainderFraction " << remainderFraction << " upperRing p0 " << upperRing[0][0] << " " << (upperRing[0][0] - lowerRing[0][0]) << std::endl;
+
+				std::vector<std::vector<double>> averageRing(0);
+
+				for (int p = 0; p <= ProcessCount - 1; ++p)
+				{
+					std::vector<double> process_arr(0);
+
+					for (int i = 0; i <= lowerRing[p].size(); ++i)
+					{
+						// std::cout <<"i "<< i<<" "<< p <<std::endl;
+
+						// std::cout<<remainderFraction*(upperRing[p][i] - lowerRing[p][i])<<"\n";
+
+						double bar_abundance = lowerRing[p][i] + remainderFraction * (upperRing[p][i] - lowerRing[p][i]);
+
+						process_arr.push_back(bar_abundance);
+					}
+					averageRing.push_back(process_arr);
+				}
+
+				hotBarInflow.push_back(averageRing);
+
+				timestepDone = true;
+				++timestep;
+				barLength = barLengthInRings[timestep];
+				// std::cout<< "timestep done \n";
+				// std::cout<< timestep << " " << barLength << " " << (int)barLength << "\n";
+			}
+		});
 }
 
 // change to more linear grow
@@ -611,7 +650,7 @@ double NuclearDisk::GasScaleLength(double t)
 double NuclearDisk::NormaliseSurfaceDensity(double scaleLength)
 {
 	double pi = 3.141592654;
-	double nuclearRingWidth = 0.005; //change also below
+	double nuclearRingWidth = 0.005; // change also below
 	double dropOffDelta = 0.001;
 
 	double sum = 0;
@@ -640,7 +679,7 @@ double NuclearDisk::NormaliseSurfaceDensity(double scaleLength)
 double NuclearDisk::PredictSurfaceDensity(double radius, double width, double totalGasMass, double scaleLength, double expNorm)
 {
 	double pi = 3.141592654;
-	double nuclearRingWidth = 0.005; //change also above
+	double nuclearRingWidth = 0.005; // change also above
 	double dropOffDelta = 0.001;
 	double nuclearRingMassFraction = Param.NuclearDisk.NuclearRingMassFraction;
 	double r = radius;
@@ -651,22 +690,20 @@ double NuclearDisk::PredictSurfaceDensity(double radius, double width, double to
 
 	double total = (mass_integrand(upRadius) - mass_integrand(downRadius));
 
-
 	double nuclearRingEdge = 2.0 * scaleLength + 0.5 * nuclearRingWidth;
 	if (r > nuclearRingEdge)
 	{
 		total *= exp(-(r - nuclearRingEdge) / dropOffDelta);
 	}
-	
-	total *= 0.8 /expNorm;
+
+	total *= 0.8 / expNorm;
 
 	total *= prefactor;
 
-	double stdev = 0.35*nuclearRingWidth;
+	double stdev = 0.35 * nuclearRingWidth;
 	double mu = 2.0 * scaleLength;
 
-
-	double nuclearRingGauss = 0.2/(r * 2.0 * pi * stdev * sqrt(2.0 * pi)) * exp( - 0.5 * (r-mu)*(r-mu)/(stdev*stdev));
+	double nuclearRingGauss = 0.2 / (r * 2.0 * pi * stdev * sqrt(2.0 * pi)) * exp(-0.5 * (r - mu) * (r - mu) / (stdev * stdev));
 
 	total += nuclearRingGauss;
 

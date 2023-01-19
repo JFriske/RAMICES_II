@@ -13,7 +13,7 @@ cgm_pollutionarr = [0.0, 0.5, 1.0]
 
 cgm_coolingarr = [1.0, 10.0, 100.0]
 
-cgmendarr = [700, 7000, 14000]
+cgmendarr = [7000, 14000]
 
 suitename = "NucDiskCGMTest"
 
@@ -24,6 +24,7 @@ outputdir = "/disk/xray8/jksf/ChemicalEvolution/"
 nrglob = 0
 nrnuc = 0 
 processes = []
+logfilearr = []
 for cgm_pollution in cgm_pollutionarr:
     for cgmstart in cgmstartarr:
         for cgm_cooling in cgm_coolingarr:
@@ -44,8 +45,9 @@ for cgm_pollution in cgm_pollutionarr:
             logfile = outputdir+ "Output/"+suitename + "/" +filenameglob+ "/output.log"
 
             #nrglob +=1 
-            launchglob = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenameglob + ".config", shell=True, stdout= logfile, bufsize=1)
+            launchglob = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenameglob + ".config", shell=True, stdout= subprocess.PIPE, bufsize=1)
             processes.append(launchglob)
+            logfilearr.append(logfile)
 
 
 for cgmendmass in cgmendarr:
@@ -68,19 +70,23 @@ for cgmendmass in cgmendarr:
 
             logfile = outputdir+ "Output/"+suitename + "/" +filenameglob+ "/output.log"
 
-            launchglob = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenameglob + ".config", shell=True, stdout= logfile, bufsize=1)
+            launchglob = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenameglob + ".config", shell=True, stdout=  subprocess.PIPE, bufsize=1)
             processes.append(launchglob)
+            logfilearr.append(logfile)
 
-for launchglob, iter in enumerate(processes):
-    # for line in iter(launchglob.stdout.readline, b''):
-    #     print ("glob" + str(nrglob) + " " + str(line))
-    #launchglob.stdout.close()
+for  nrglob, (launchglob, logfile) in enumerate(zip(processes, logfilearr)):
+    with open(logfile, 'w') as log:
+        for line in iter(launchglob.stdout.readline, b''):
+            #print ("glob" + str(nrglob) + " " + str(line))
+            log.write(str(line))
+    launchglob.stdout.close()
     launchglob.wait()
-    print("Done Global Nr " + iter + "\n")
+    print("Done Global Nr " + str(nrglob) + "\n")
 
-print(processes.length())
+print(len(processes))
 processes = []
-print(processes.length())
+logfilearr = []
+print(len(processes))
 
 for cgm_pollution in cgm_pollutionarr:
     for cgmstart in cgmstartarr:
@@ -95,9 +101,10 @@ for cgm_pollution in cgm_pollutionarr:
                     outfile.write("readin-dir "+outputdir+ "Output/"+suitename + "/"  +filenameglob + "\n")
                     outfile.write(infile.read())
 
-            logfile = outputdir+ "Output/"+suitename + "/" +filenameglob+ "/output.log"
-                    
-            launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout=logfile, bufsize=1)
+            logfile = outputdir+ "Output/"+suitename + "/" +filenamenuc+ "/output.log"
+            logfilearr.append(logfile)
+
+            launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout= subprocess.PIPE, bufsize=1)
             processes.append(launchnuc)
 
 for cgmendmass in cgmendarr:
@@ -111,33 +118,25 @@ for cgmendmass in cgmendarr:
                     outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenamenuc+"\n")
                     outfile.write("readin-dir "+outputdir+ "Output/"+suitename + "/"  +filenameglob + "\n")
                     outfile.write(infile.read())
-                    
-            launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout=logfile, bufsize=1)
+            
+            logfile = outputdir+ "Output/"+suitename + "/" +filenamenuc+ "/output.log"
+            logfilearr.append(logfile)
+            
+            launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout= subprocess.PIPE, bufsize=1)
             processes.append(launchnuc)
 
-for launchnuc, iter in enumerate(processes):
+
+for  nrnuc, (launchnuc, logfile) in enumerate(zip(processes, logfilearr)):
+    with open(logfile, 'w') as log:
+        for line in iter(launchnuc.stdout.readline, b''):
+            #print ("glob" + str(nrglob) + " " + str(line))
+            log.write(str(line))
+    launchnuc.stdout.close()
     launchnuc.wait()
-    print("Done Nuclear Nr " + iter + "\n")
+    print("Done Nuclear Nr " + str(nrnuc) + "\n")
+
                                 
 end = datetime.now() -beg
 
 current_time = end#.strftime("%H:%M:%S")
 print("Current Time =", current_time)
-
-
-
-
-
-# fh-sn1a 0.99
-# fh-ccsn 0.7
-# fh-nsm 0.4
-# fh-agb 0.5
-
-
-# output Output/NucDiskFindHook
-
-# hot-gas-transport-loss 0.7
-# cold-gas-transport-loss 0.5
-
-# eject 0.4 (one for nuc and one for total)
-

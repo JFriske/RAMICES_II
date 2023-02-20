@@ -46,6 +46,7 @@ for fhsn1a in fhsn1aarr:
                                 with open ("config/"+ suitename +"/globalbaseconfig.config") as infile:
                                     outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenameglob+"\n")
                                     outfile.write(infile.read())
+                                    outfile.write("\n")
                                     outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
                                     outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))
                                     outfile.write("fh-nsm {:.4f}\n".format(fhnsm))
@@ -82,6 +83,7 @@ for fhsn1a in fhsn1aarr:
                                                 outfile.write("output "+outputdir+ "Output/"+suitename + "/" +filenamenuc+"\n")
                                                 outfile.write("readin-dir "+outputdir+ "Output/"+suitename + "/"  +filenameglob + "\n")
                                                 outfile.write(infile.read())
+                                                outfile.write("\n")
                                                 outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
                                                 outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))
                                                 outfile.write("fh-nsm {:.4f}\n".format(fhnsm))
@@ -105,19 +107,4 @@ current_time = end#.strftime("%H:%M:%S")
 print("Current Time =", current_time)
 
 
-
-
-
-# fh-sn1a 0.99
-# fh-ccsn 0.7
-# fh-nsm 0.4
-# fh-agb 0.5
-
-
-# output Output/NucDiskFindHook
-
-# hot-gas-transport-loss 0.7
-# cold-gas-transport-loss 0.5
-
-# eject 0.4 (one for nuc and one for total)
 

@@ -10,11 +10,13 @@ beg = datetime.now()
 
 
 fhccsnarr = np.linspace(0.25, 0.9, 10)
-fhnsmarr = 1.0 -((1.0 - fhccsnarr)*0.5)
+fhnsmarr = 1.0 -(2.0*(1.0 - fhccsnarr))
 fhagmarr = np.linspace(0.1,0.65, 10)
 fhsn1aarr = (0.85, 0.9, 0.93, 0.95, 0.97, 0.98, 0.99, 0.995, 0.999, 0.9999)
 ejectglobalarr = np.linspace(0.3,0.6,10)
 ejectnucleararr = np.linspace(0.45,0.95,10)
+
+inflowarr = [0,1]
 
 paramarr = [fhccsnarr, fhnsmarr, fhagmarr, fhsn1aarr, ejectglobalarr, ejectnucleararr]
 defaultarr = [0.6, 0.8, 0.35, 0.99, 0.45, 0.65]
@@ -92,28 +94,32 @@ logfilearr = []
 print(len(processes))
 
 for fhccsn, fhnsm, fhagb, fhsn1a, ejectglob, ejectnuc in zip(fullparamarr[0], fullparamarr[1], fullparamarr[2], fullparamarr[3], fullparamarr[4], fullparamarr[5]):
-    filenamenuc = f"Nuclear_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_fhsn1a{fhsn1a:.4f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}"
-    filenameglob = f"Global_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_fhsn1a{fhsn1a:.4f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}"
-    with open ("config/"+ suitename +"/" + filenamenuc+".config", "w") as outfile:
-        with open ("config/"+ suitename +"/stdnuc_paramtest.config") as infile:
-            outfile.write("output "+outputdir+ "/Output/"+suitename + "/" +filenamenuc+"\n")
-            outfile.write("readin-dir "+outputdir+ "/Output/"+suitename + "/"  +filenameglob + "\n")
-            outfile.write(infile.read())
-            outfile.write("\n")
-            outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))
-            outfile.write("fh-nsm {:.4f}\n".format(fhnsm))
-            outfile.write("fh-agb {:.4f}\n".format(fhagb))
-            outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
-            outfile.write("eject {:.4f}\n".format(ejectnuc))
+    for inflow in inflowarr:
+        filenamenuc = f"Nuclear_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_fhsn1a{fhsn1a:.4f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}"
+        if inflow == 1:
+            filenamenuc = f"Nuclear_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_fhsn1a{fhsn1a:.4f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}_inflow"
+        filenameglob = f"Global_fhccsn{fhccsn:.3f}_fhnsm{fhnsm:.3f}_fhagb{fhagb:.3f}_fhsn1a{fhsn1a:.4f}_ejectglob{ejectglob:.3f}_ejectnuc{ejectnuc:.3f}"
+        with open ("config/"+ suitename +"/" + filenamenuc+".config", "w") as outfile:
+            with open ("config/"+ suitename +"/stdnuc_paramtest.config") as infile:
+                outfile.write("output "+outputdir+ "/Output/"+suitename + "/" +filenamenuc+"\n")
+                outfile.write("readin-dir "+outputdir+ "/Output/"+suitename + "/"  +filenameglob + "\n")
+                outfile.write(infile.read())
+                outfile.write("\n")
+                outfile.write("fh-ccsn {:.4f}\n".format(fhccsn))
+                outfile.write("fh-nsm {:.4f}\n".format(fhnsm))
+                outfile.write("fh-agb {:.4f}\n".format(fhagb))
+                outfile.write("fh-sn1a {:.4f}\n".format(fhsn1a))
+                outfile.write("eject {:.4f}\n".format(ejectnuc))
+                outfile.write("inflow-on {}\n".format(inflow))
 
-    logfile = outputdir+ "Output/"+suitename + "/" +filenamenuc+ "/output.log"
+        logfile = outputdir+ "Output/"+suitename + "/" +filenamenuc+ "/output.log"
 
-    outputfolder = outputdir + "/" + "Output/"+suitename+ "/" + filenamenuc
-    if not os.path.exists(outputfolder):
-        os.mkdir(outputfolder)
-    launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout= subprocess.PIPE, bufsize=1)
-    processes.append(launchnuc)
-    logfilearr.append(logfile)
+        outputfolder = outputdir + "/" + "Output/"+suitename+ "/" + filenamenuc
+        if not os.path.exists(outputfolder):
+            os.mkdir(outputfolder)
+        launchnuc = subprocess.Popen("./Ramices_Launch.sh -config config/"+suitename + "/" + filenamenuc + ".config", shell=True, stdout= subprocess.PIPE, bufsize=1)
+        processes.append(launchnuc)
+        logfilearr.append(logfile)
 
 
 

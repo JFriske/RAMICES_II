@@ -2,31 +2,30 @@
 
 const double pi = 3.141592654;
 //! Initialises itself into a primordial state
-Ring::Ring(int index, double mass,InitialisedData & data): Data(data), Param(data.Param), Width(data.Param.Galaxy.RingWidth[index]), Radius(data.Param.Galaxy.RingRadius[index]), Gas(GasReservoir::Primordial(mass,data.Param)), Stars(index,data), CGMBuffer(data.Param)
+Ring::Ring(int index, double mass, InitialisedData &data) : Data(data), Param(data.Param), Width(data.Param.Galaxy.RingWidth[index]), Radius(data.Param.Galaxy.RingRadius[index]), Gas(GasReservoir::Primordial(mass, data.Param)), Stars(index, data), CGMBuffer(data.Param)
 {
 	RadiusIndex = index;
 	Area = 2 * pi * Radius * Width;
 	//~ PreviousEnrichment.resize(Param.Meta.SimulationSteps);
 	//~ PreviousEnrichment[0] = Gas;
-	Data.Log("\tRing " + std::to_string(index) + " initialised\n",3);
+	Data.Log("\tRing " + std::to_string(index) + " initialised\n", 3);
 }
 
 double Ring::Mass()
 {
 	MassReport Mrr = Stars.DeadMass();
-	return Gas.Mass() + Stars.AliveMass() + Mrr.Total /1e9; 
+	return Gas.Mass() + Stars.AliveMass() + Mrr.Total / 1e9;
 }
-
 
 void Ring::TimeStep(int t)
 {
 	//~ std::cout << "Ring " << RadiusIndex << " at " << t << std::endl;
 	MetCheck("Start of internal loop");
 	Cool();
-	
+
 	MakeStars(t);
 
-	if (t < Param.Meta.SimulationSteps-2)
+	if (t < Param.Meta.SimulationSteps - 2)
 	{
 		KillStars(t);
 	}
@@ -36,7 +35,7 @@ void Ring::TimeStep(int t)
 
 void Ring::MakeStars(int t)
 {
-	Stars.Form(Gas,CGMBuffer, t);
+	Stars.Form(Gas, CGMBuffer, t);
 }
 void Ring::KillStars(int time)
 {
@@ -51,14 +50,14 @@ void Ring::KillStars(int time)
 
 void Ring::Cool()
 {
-	Gas.PassiveCool(Param.Meta.TimeStep,false);
+	Gas.PassiveCool(Param.Meta.TimeStep, false);
 }
 void Ring::UpdateMemory(int t)
 {
 	//~ Gas.UpdateMemory(t);
 }
 
-void neatLogLog(double value, std::stringstream & stream)
+void neatLogLog(double value, std::stringstream &stream)
 {
 	if (isinf(value) || isnan(value))
 	{
@@ -70,7 +69,7 @@ void neatLogLog(double value, std::stringstream & stream)
 	}
 }
 
-void neatLogAbs(double value, std::stringstream & stream)
+void neatLogAbs(double value, std::stringstream &stream)
 {
 	if (isinf(value) || isnan(value))
 	{
@@ -82,15 +81,14 @@ void neatLogAbs(double value, std::stringstream & stream)
 	}
 }
 
-
-void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot)
+void Ring::SaveChemicalHistory(int t, std::stringstream &absoluteStreamCold, std::stringstream &logarithmicStreamCold, std::stringstream &absoluteStreamHot, std::stringstream &logarithmicStreamHot)
 {
 	std::string basic = "";
 	if (t == 0)
 	{
-		HotBuffer = std::vector<std::vector<double>>(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
-		ColdBuffer = std::vector<std::vector<double>>(ProcessCount + 1, std::vector<double>(ElementCount,0.0));
-		
+		HotBuffer = std::vector<std::vector<double>>(ProcessCount + 1, std::vector<double>(ElementCount, 0.0));
+		ColdBuffer = std::vector<std::vector<double>>(ProcessCount + 1, std::vector<double>(ElementCount, 0.0));
+
 		if (RadiusIndex == 0)
 		{
 			std::string headers = "Time, RingIndex, RingRadius";
@@ -99,7 +97,7 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 				std::string processName;
 				if (p > -1)
 				{
-					 processName = Param.Yield.ProcessNames[p];
+					processName = Param.Yield.ProcessNames[p];
 				}
 				else
 				{
@@ -108,30 +106,29 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 				for (int e = 0; e < ElementCount; ++e)
 				{
 					std::string elementName = Param.Element.ElementNames[e];
-				
-				
-					headers += ", " + processName+ "_" + elementName;
+
+					headers += ", " + processName + "_" + elementName;
 				}
 			}
 			basic = headers + "\n";
 		}
 	}
-	basic += std::to_string(t*Param.Meta.TimeStep) + ", " + std::to_string(RadiusIndex) + ", " + std::to_string(Radius);
-	
+	basic += std::to_string(t * Param.Meta.TimeStep) + ", " + std::to_string(RadiusIndex) + ", " + std::to_string(Radius);
+
 	absoluteStreamCold << basic;
-	logarithmicStreamCold  << basic;
-	absoluteStreamHot   << basic;
-	logarithmicStreamHot   << basic;
-	
-	const std::vector<GasStream> & target = Stars.Population[t].BirthGas;
-	
+	logarithmicStreamCold << basic;
+	absoluteStreamHot << basic;
+	logarithmicStreamHot << basic;
+
+	const std::vector<GasStream> &target = Stars.Population[t].BirthGas;
+
 	double coldMass = 0;
 	double hotMass = 0;
 	for (int p = 0; p < ProcessCount; ++p)
 	{
 		double processCold = target[p].ColdMass();
 		double processHot = target[p].HotMass();
-		
+
 		coldMass += processCold;
 		hotMass += processHot;
 		for (int e = 0; e < ElementCount; ++e)
@@ -147,16 +144,15 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 			}
 			ColdBuffer[0][e] += cold;
 			HotBuffer[0][e] += hot;
-			ColdBuffer[p+1][e] = cold/processCold;
-			HotBuffer[p+1][e] = hot/processHot;
+			ColdBuffer[p + 1][e] = cold / processCold;
+			HotBuffer[p + 1][e] = hot / processHot;
 		}
-	} 
+	}
 	for (int e = 0; e < ElementCount; ++e)
 	{
-		ColdBuffer[0][e] /= (coldMass+1e-88);
-		HotBuffer[0][e] /= (hotMass+1e-88);
+		ColdBuffer[0][e] /= (coldMass + 1e-88);
+		HotBuffer[0][e] /= (hotMass + 1e-88);
 	}
-	
 
 	for (int p = 0; p < ProcessCount + 1; ++p)
 	{
@@ -166,33 +162,31 @@ void Ring::SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, st
 			double hotCorrect = hotMass;
 			if (p > 0)
 			{
-				coldCorrect = target[p-1].ColdMass();
-				hotCorrect = target[p-1].HotMass();
+				coldCorrect = target[p - 1].ColdMass();
+				hotCorrect = target[p - 1].HotMass();
 			}
 
 			neatLogAbs(ColdBuffer[p][e] * coldCorrect, absoluteStreamCold);
 			neatLogAbs(HotBuffer[p][e] * hotCorrect, absoluteStreamHot);
-					
+
 			double logValueCold = log10(ColdBuffer[p][e] / Param.Element.SolarAbundances[e]);
-			double logValueHot = log10(HotBuffer[p][e]/Param.Element.SolarAbundances[e]);
-			
-			neatLogLog(logValueCold,logarithmicStreamCold);
-			neatLogLog(logValueHot,logarithmicStreamHot);
-	
+			double logValueHot = log10(HotBuffer[p][e] / Param.Element.SolarAbundances[e]);
+
+			neatLogLog(logValueCold, logarithmicStreamCold);
+			neatLogLog(logValueHot, logarithmicStreamHot);
 		}
 	}
 	absoluteStreamCold << "\n";
-	logarithmicStreamCold  << "\n";
-	absoluteStreamHot   << "\n";
-	logarithmicStreamHot   << "\n";
+	logarithmicStreamCold << "\n";
+	absoluteStreamHot << "\n";
+	logarithmicStreamHot << "\n";
 }
 
-
-void Ring::MetCheck(const std::string & location)
+void Ring::MetCheck(const std::string &location)
 {
 	if (Gas.Mass() < 0)
 	{
-		std::cout << "\n\nThe gas in Ring " << RadiusIndex << " has negative mass -- something has gone very wrong!" << std::endl;
+		std::cout << "\n\nThe gas in Ring " << RadiusIndex << " has negative mass -- something has gone very wrong at " << location << std::endl;
 		exit(5);
 	}
 	double z = Gas.ColdGasMetallicity();
@@ -211,103 +205,95 @@ void Ring::MetCheck(const std::string & location)
 			std::cout << "\n";
 		}
 		exit(5);
-		
 	}
-	
 }
-
-
 
 double tan_SkyCut(double theta)
 {
 
 	double order0 = 0.715;
 	double order1 = -1.24 * cos(theta) + 1.915 * sin(theta);
-	double order2 = -0.114 * cos(2*theta) - 0.2553*sin(2*theta);
-	
+	double order2 = -0.114 * cos(2 * theta) - 0.2553 * sin(2 * theta);
+
 	return order0 + order1 + order2;
 }
 
-void Ring::ComputeSelectionFunction(double minMv,double maxMv)
+void Ring::ComputeSelectionFunction(double minMv, double maxMv)
 {
 	MinMv = minMv;
 	MaxMv = maxMv;
-	
+
 	int Nm = Param.Catalogue.IsochroneMagnitudeResolution;
 	double dt = Param.Catalogue.IsochroneTimeStep;
 	int Nt = ceil((double)Param.Meta.SimulationDuration / dt) + 1;
-	double deltaM = (maxMv - minMv)/(Nm - 1);
-	SelectionGrid = std::vector<std::vector<double>>(Nt,std::vector<double>(Nm,0.0));
-	
+	double deltaM = (maxMv - minMv) / (Nm - 1);
+	SelectionGrid = std::vector<std::vector<double>>(Nt, std::vector<double>(Nm, 0.0));
+
 	int Nr = Param.Catalogue.RadialResolution;
 	int Nphi = Param.Catalogue.AzimuthalResolution;
-	
+
 	double dSol = Param.Catalogue.SolarRadius;
-	double dr = Width/(Nr);
-	double dphi = (2*M_PI)/(Nphi-1); 
-	
+	double dr = Width / (Nr);
+	double dphi = (2 * M_PI) / (Nphi - 1);
+
 	double z0 = Param.Catalogue.VerticalHeightStart;
 	double kappa = Param.Catalogue.VerticalHeightScaling;
 	double tauN = Param.Catalogue.VerticalHeightPower;
-	
-	
+
 	bool printy = (RadiusIndex == 40);
-	
+
 	for (int t = 0; t < Nt; ++t)
 	{
-		double time = t* dt; 
-		double zBar = z0 + kappa * pow(time,tauN);
-		
+		double time = t * dt;
+		double zBar = z0 + kappa * pow(time, tauN);
+
 		for (int i = 0; i < Nm; ++i)
 		{
 			double Mv = minMv + i * deltaM;
-			
-			double maxDistance = pow(10, (4.0 - Mv)/5);
-			double minDistance = pow(10, (2.0 - Mv)/5);
+
+			double maxDistance = pow(10, (4.0 - Mv) / 5);
+			double minDistance = pow(10, (2.0 - Mv) / 5);
 			double val = 0;
 			double normVal = 0;
 			for (int ri = 0; ri < Nr; ++ri)
 			{
-				double r = Radius - Width/2 + ri * dr;
-				double phiVal =0;
+				double r = Radius - Width / 2 + ri * dr;
+				double phiVal = 0;
 				for (int angle = 0; angle < Nphi; ++angle)
 				{
-					double phi= angle * dphi;
-					
-					double inPlaneDistance = sqrt(dSol * dSol + r*r - 2 * dSol * r * cos(phi));
-					
-					double s = 0;
-					
+					double phi = angle * dphi;
 
-					
+					double inPlaneDistance = sqrt(dSol * dSol + r * r - 2 * dSol * r * cos(phi));
+
+					double s = 0;
+
 					if (inPlaneDistance <= maxDistance)
 					{
 						double dpSq = inPlaneDistance * inPlaneDistance;
 						double ell = asin(r / inPlaneDistance * sin(phi));
-					
+
 						double zCut = inPlaneDistance * tan_SkyCut(ell);
 						double discCut_Degrees = 10.0;
-						double discCut = inPlaneDistance * tan( discCut_Degrees * M_PI/180);
-						
-						double upperCut = inPlaneDistance * tan( 50.0 * M_PI/180);
-						
-						double bPlus = std::min(upperCut,sqrt(maxDistance * maxDistance - dpSq));
-						double aMinus = sqrt( std::max( minDistance * minDistance - dpSq, discCut * discCut));
+						double discCut = inPlaneDistance * tan(discCut_Degrees * M_PI / 180);
+
+						double upperCut = inPlaneDistance * tan(50.0 * M_PI / 180);
+
+						double bPlus = std::min(upperCut, sqrt(maxDistance * maxDistance - dpSq));
+						double aMinus = sqrt(std::max(minDistance * minDistance - dpSq, discCut * discCut));
 						double aPlus = std::min(zCut, bPlus);
-						
+
 						if (aPlus > aMinus)
 						{
-							s += 0.5 * (exp(-aMinus/zBar) - exp(-aPlus/zBar));
+							s += 0.5 * (exp(-aMinus / zBar) - exp(-aPlus / zBar));
 						}
-						
-						double bMinus = abs( std::min(-aMinus,zCut));
+
+						double bMinus = abs(std::min(-aMinus, zCut));
 						if (bPlus > bMinus)
 						{
-							s += 0.5 * (exp( -bMinus/zBar) - exp( - bPlus/zBar));
+							s += 0.5 * (exp(-bMinus / zBar) - exp(-bPlus / zBar));
 						}
 					}
-					
-					
+
 					phiVal += r * s * dr * dphi;
 					normVal += r * dr * dphi;
 				}
@@ -315,10 +301,8 @@ void Ring::ComputeSelectionFunction(double minMv,double maxMv)
 			}
 			val /= normVal;
 			SelectionGrid[t][i] = val;
-			
 		}
 	}
-	
 }
 
 double Ring::SelectionEffect(double Mv, double age)
@@ -326,31 +310,31 @@ double Ring::SelectionEffect(double Mv, double age)
 	int Nm = Param.Catalogue.IsochroneMagnitudeResolution;
 	double dt = Param.Catalogue.IsochroneTimeStep;
 	int Nt = ceil((double)Param.Meta.SimulationDuration / dt) + 1;
-	double deltaM = (MaxMv - MinMv)/(Nm - 1);
+	double deltaM = (MaxMv - MinMv) / (Nm - 1);
 
-	double mvProgress = (Mv - MinMv)/deltaM;
-	double tProgress = age/dt;
-	int mv_id = std::min(Nm - 2,std::max(0,(int)mvProgress));
-	int t_id = std::min(Nt - 2,std::max(0,(int)tProgress));
-	
+	double mvProgress = (Mv - MinMv) / deltaM;
+	double tProgress = age / dt;
+	int mv_id = std::min(Nm - 2, std::max(0, (int)mvProgress));
+	int t_id = std::min(Nt - 2, std::max(0, (int)tProgress));
+
 	double mvInterp = (mvProgress - mv_id);
 	double tInterp = (tProgress - t_id);
-	
-	double lowTVal = SelectionGrid[t_id][mv_id] + mvInterp * (SelectionGrid[t_id][mv_id+1]-SelectionGrid[t_id][mv_id]);
-	double highTVal = SelectionGrid[t_id+1][mv_id] + mvInterp * (SelectionGrid[t_id+1][mv_id+1] - SelectionGrid[t_id+1][mv_id]);
-	double val = lowTVal + tInterp * (highTVal - lowTVal);	
-	
+
+	double lowTVal = SelectionGrid[t_id][mv_id] + mvInterp * (SelectionGrid[t_id][mv_id + 1] - SelectionGrid[t_id][mv_id]);
+	double highTVal = SelectionGrid[t_id + 1][mv_id] + mvInterp * (SelectionGrid[t_id + 1][mv_id + 1] - SelectionGrid[t_id + 1][mv_id]);
+	double val = lowTVal + tInterp * (highTVal - lowTVal);
+
 	//~ if (RadiusIndex == 99)
 	//~ {
-		//~ std::cout << "\tSelection effect call for ring " << RadiusIndex << " for Mv = " << Mv << " age " << age << " my grid coords are:\n";
-		//~ std::cout << "\t\t M is: " << mv_id
-		//~ std::cout << "\t\t LowT: " << t_id * dt << ": " << SelectionGrid[t_id][mv_id] << "-> " <<
-		//~ std::cout << "\t\t For final value: " << val << std::endl;
+	//~ std::cout << "\tSelection effect call for ring " << RadiusIndex << " for Mv = " << Mv << " age " << age << " my grid coords are:\n";
+	//~ std::cout << "\t\t M is: " << mv_id
+	//~ std::cout << "\t\t LowT: " << t_id * dt << ": " << SelectionGrid[t_id][mv_id] << "-> " <<
+	//~ std::cout << "\t\t For final value: " << val << std::endl;
 	//~ }
 	return val;
 }
 
-std::string Ring::Synthesis(const StellarPopulation & targetPopulation, double migrateFrac, double originRadius, double & totalSynthesised)
+std::string Ring::Synthesis(const StellarPopulation &targetPopulation, double migrateFrac, double originRadius, double &totalSynthesised)
 {
 	std::string output = "";
 	double age = targetPopulation.Age;
@@ -358,24 +342,24 @@ std::string Ring::Synthesis(const StellarPopulation & targetPopulation, double m
 	{
 		//~ std::cout << "\t Mass " << m << std::endl;
 		if (targetPopulation.Distribution[m].Count > 0)
-		{		
-			const IsochroneCube & iso = targetPopulation.Distribution[m].Isochrone;
+		{
+			const IsochroneCube &iso = targetPopulation.Distribution[m].Isochrone;
 			int n = iso.Count();
-			std::vector<int> numberSynthesised(n,0);
+			std::vector<int> numberSynthesised(n, 0);
 			double mass = Param.Stellar.MassGrid[m];
 			int totalObs = 0;
 			for (int entry = 0; entry < n; ++entry)
 			{
-				
-				double Mv = iso.Value(entry,VMag);
+
+				double Mv = iso.Value(entry, VMag);
 				double populationWeighting = 1.0 / Param.Catalogue.SampleCount;
-				double observeFrac = SelectionEffect(Mv,age);
+				double observeFrac = SelectionEffect(Mv, age);
 				double count = migrateFrac * targetPopulation.Distribution[m].Count * populationWeighting;
-				
-				double crowdingFactor =0.3;
+
+				double crowdingFactor = 0.3;
 
 				double obs = observeFrac * count * crowdingFactor;
-				
+
 				int intObs = obs;
 
 				double targetRoll = (obs - intObs);
@@ -387,16 +371,13 @@ std::string Ring::Synthesis(const StellarPopulation & targetPopulation, double m
 				numberSynthesised[entry] = intObs;
 				totalObs += intObs;
 			}
-			
-			
+
 			if (totalObs > 0)
 			{
-				output += targetPopulation.CatalogueEntry(numberSynthesised,m,Radius,originRadius);
+				output += targetPopulation.CatalogueEntry(numberSynthesised, m, Radius, originRadius);
 				//~ SynthesisOutput[i] += output;
 				totalSynthesised += totalObs;
 			}
-		
-			
 		}
 	}
 	return output;

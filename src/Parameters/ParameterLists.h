@@ -108,6 +108,10 @@ class NuclearDiskValues : public ParamList
 
 		Argument<double> NuclearRingMassFraction = Argument<double>(0.2, "nuc-ring-fraction");
 
+		Argument<double> NuclearRingWidth = Argument<double>(0.005, "nuc-ring-width");
+
+		Argument<double> NuclearDiskDropOff = Argument<double>(0.001, "nuc-disk-drop-off");
+
 		Argument<double> GalaxyRadius = Argument<double>(20.0, "galaxy-cutoff-radius");
 
 		Argument<int> GalaxyRingCount = Argument<int>(100, "galaxy-ring-number");
@@ -121,7 +125,7 @@ class NuclearDiskValues : public ParamList
 		//!Boring constructor -- slots in the relevant arguments into the ParamList::argPointer array.
 		NuclearDiskValues()
 		{
-			argPointers = {&GlobalReadInDir, &DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
+			argPointers = {&GlobalReadInDir, &DoNuclearDisk, &BarGrowthStart, &BarInitialiseTime, &BarInitialLength, &BarFinalLength, &NuclearRingMassFraction, &NuclearRingWidth, &NuclearDiskDropOff, &GalaxyRadius, &GalaxyRingCount, &HotGasTransportLoss, &ColdGasTransportLoss, &HotGasLossTimeStep};
 		};
 		
 		//! An overload of a normally empty function. Goes through and creates the necessary directory structure 

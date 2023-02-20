@@ -25,8 +25,15 @@ class NuclearDisk : public Galaxy
         double GasScaleLength(double t);
         double NormaliseSurfaceDensity(double scaleLength);
         double PredictSurfaceDensity(double radius, double width, double totalGasMass, double scaleLength, double expNorm);
+        double PredictSurfaceDensityInflow(double radius, double width, double totalGasMass, double scaleLength, double expNorm, double time);
+        double PredictSurfaceDensityOnfall(double radius, double width, double totalGasMass, double scaleLength, double expNorm, double time);
         void Infall(double time, int timestep);
         double InfallMass(int timestep);
+
+        void InsertInfallingGasInflow(int ring, double amount, double scalelength);
+        void InsertInfallingGasOnfall(int ring, double amount, double scalelength);
+
+
         void LoseHotGas();
 
         void CGM_SaveChemicalHistory(int t, std::stringstream & absoluteStreamCold, std::stringstream & logarithmicStreamCold, std::stringstream & absoluteStreamHot, std::stringstream & logarithmicStreamHot);

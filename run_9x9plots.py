@@ -18,7 +18,7 @@ ejectglobalarr = np.linspace(0.3,0.6,9)
 inflowarr = [0,1]
 
 #paramarr = [fhccsnarr, fhnsmarr, fhagmarr, fhsn1aarr, ejectglobalarr, ejectnucleararr]
-defaultarr = [0.6, 0.8, 0.35, 0.99, 0.45, 0.65]
+defaultarr = [0.8, 0.6, 0.7, 0.99, 0.55, 0.65]
 
 nrglob = 0
 nrnuc = 0 

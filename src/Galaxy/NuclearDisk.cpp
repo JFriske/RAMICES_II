@@ -679,9 +679,8 @@ double NuclearDisk::GasScaleLength(double t)
 double NuclearDisk::NormaliseSurfaceDensity(double scaleLength)
 {
 	double pi = 3.141592654;
-	double nuclearRingWidth = 0.005; // change also below
-	double dropOffDelta = 0.001;
-
+	double nuclearRingWidth = Param.NuclearDisk.NuclearRingWidth;
+	double dropOffDelta =Param.NuclearDisk.NuclearDiskDropOff;
 	double sum = 0;
 
 	for (int i = 0; i < Rings.size(); ++i)

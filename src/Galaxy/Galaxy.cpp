@@ -377,7 +377,10 @@ void Galaxy::InsertInfallingGas(int ring, double amount)
 		// check that we do not remove more gas than is actually present
 		double maxDepletion = Param.Migration.MaxStealFraction;
 		inflowMass = std::min(inflowMass, maxDepletion * Rings[ring + 1].Gas.ColdMass());
-		//~ std::cout << inflowMass << std::endl;
+		
+		// std::cout << inflowMass << std::endl;
+		Rings[ring].inflowMass = inflowMass;
+
 
 		Rings[ring].Gas.TransferColdFrom(Rings[ring + 1].Gas, inflowMass);
 		// if some part of the budget was missed because of the std::min above, then make up the deficit from the CGM
@@ -644,9 +647,10 @@ void Galaxy::SaveState_Mass(double t)
 		double Mbh = Mrr.BH / 1e9;
 		double Mr = Mrr.Total / 1e9;
 		double Mt = Ms + Mc + Mh + Mr;
+		double Minflow = std::max(0.0, Rings[i].inflowMass);
 
 		double Mcgm = CGM.Mass();
-		std::vector<double> vals = {Rings[i].Radius, Rings[i].Area,Mt,Ms,Mc,Mh,Mwd,Mns,Mbh,Mcgm};
+		std::vector<double> vals = {Rings[i].Radius, Rings[i].Area,Mt,Ms,Mc,Mh,Mwd,Mns,Mbh,Mcgm,Minflow};
     
 		output << t;
 		output << ", " << i ;
@@ -661,7 +665,7 @@ void Galaxy::SaveState_Mass(double t)
 }
 std::string Galaxy::MassHeaders()
 {
-	return "Time, RingIndex, Radius, SurfaceArea, TotalMass, StellarMass, ColdGasMass, HotGasMass, WDMass, NSMass, BHMass, CGMMass";
+	return "Time, RingIndex, Radius, SurfaceArea, TotalMass, StellarMass, ColdGasMass, HotGasMass, WDMass, NSMass, BHMass, CGMMass, Minflow";
 }
 
 void Galaxy::SaveState_Enrichment(double t)

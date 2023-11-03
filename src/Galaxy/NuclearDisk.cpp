@@ -110,18 +110,35 @@ void NuclearDisk::Infall(double t, int timestep)
 			required = 0;
 		}
 
+		double massouterring;
+		if(i< Rings.size() -1){
+			massouterring = Rings[i+1].Gas.ColdMass();
+		}
+
 		InsertInfallingGasInflow(i, inflowfrac[i] * required, Rd);
+
+		if(i< Rings.size() -1){
+			massouterring = (massouterring - Rings[i+1].Gas.ColdMass())/massouterring;
+		}
 
 		double onfallreq = target - (Rings[i].Gas.ColdMass());
 
-		// infall only in nuclear disk are if inflow active
+		if(i< Rings.size() -1){
+		std::cout<<"Time "<< t<<" Ring "<< i << " frac ring+1 "<< massouterring << " mass ring+1 "<< Rings[i+1].Gas.ColdMass()<< " inflow " <<  required << " onfall bef " << onfallreq;
+		}
+
+
+		// inflow only in nuclear disk are if inflow active
 		if (Param.Migration.InflowActive)
 		{
+			// Do no inflow more than two nuc ring widths inside of NSD, then linearly increase to full onfall
 
-			double minonfalldistance = 2.0 * Rd - 2 * 0.005;
-			double maxonfalldistance = 2.0 * Rd - 1 * 0.005;
+			double nuclearRingWidth = Param.NuclearDisk.NuclearRingWidth;
 
-			double r_current = i * Rings[i].Width;
+			double minonfalldistance = 2.0 * Rd - 3 * nuclearRingWidth;
+			double maxonfalldistance = 2.0 * Rd - 2 * nuclearRingWidth;
+
+			double r_current = Rings[i].Radius;
 
 			if (r_current < minonfalldistance)
 			{
@@ -135,6 +152,10 @@ void NuclearDisk::Infall(double t, int timestep)
 			{
 				onfallreq *= (r_current - minonfalldistance) / (maxonfalldistance - minonfalldistance);
 			}
+		}
+		if(i< Rings.size() -1){
+
+			std::cout<< " onfall after " << onfallreq << "\n";
 		}
 
 		InsertInfallingGasOnfall(i, onfallreq, Rd);
@@ -738,7 +759,7 @@ double NuclearDisk::PredictSurfaceDensity(double radius, double width, double to
 	return totalGasMass * total;
 }
 
-// adds a nuclear ring at 2*scaleLength with a mass fraction of the total mass and dropoff outside of it
+
 double NuclearDisk::PredictSurfaceDensityInflow(double radius, double width, double totalGasMass, double scaleLength, double expNorm, double time)
 {
 	double pi = 3.141592654;
@@ -768,7 +789,7 @@ double NuclearDisk::PredictSurfaceDensityInflow(double radius, double width, dou
 	return totalGasMass * total;
 }
 
-// adds a nuclear ring at 2*scaleLength with a mass fraction of the total mass and dropoff outside of it
+
 double NuclearDisk::PredictSurfaceDensityOnfall(double radius, double width, double totalGasMass, double scaleLength, double expNorm, double time)
 {
 	double pi = 3.141592654;
@@ -797,6 +818,9 @@ void NuclearDisk::InsertInfallingGasInflow(int ring, double amount, double scale
 		double maxDepletion = Param.Migration.MaxStealFraction;
 		inflowMass = std::min(inflowMass, maxDepletion * (Rings[ring + 1].Gas.ColdMass()));
 		Rings[ring].Gas.TransferColdFrom(Rings[ring + 1].Gas, inflowMass);
+
+		// Rings[ring].Gas.Components[j].
+		Rings[ring].inflowMass = inflowMass;
 	}
 }
 
@@ -805,4 +829,5 @@ void NuclearDisk::InsertInfallingGasOnfall(int ring, double amount, double scale
 	double onfall = std::min(amount, 0.5 * CGM.ColdMass());
 
 	Rings[ring].Gas.Absorb(CGM.AccretionStream(onfall));
+
 }

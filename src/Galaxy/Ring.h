@@ -16,6 +16,9 @@ class Ring
 		const double Radius;
 		const double Width;
 		double Area;
+
+		double inflowMass;
+
 		//Relic Reservoir
 		StarReservoir Stars;
 		GasReservoir Gas;

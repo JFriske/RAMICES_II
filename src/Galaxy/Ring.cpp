@@ -6,6 +6,9 @@ Ring::Ring(int index, double mass, InitialisedData &data) : Data(data), Param(da
 {
 	RadiusIndex = index;
 	Area = 2 * pi * Radius * Width;
+	inflowMass = 0.0;
+	
+	
 	//~ PreviousEnrichment.resize(Param.Meta.SimulationSteps);
 	//~ PreviousEnrichment[0] = Gas;
 	Data.Log("\tRing " + std::to_string(index) + " initialised\n", 3);

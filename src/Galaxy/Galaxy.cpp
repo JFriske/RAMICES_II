@@ -506,7 +506,8 @@ void Galaxy::ComputeScattering(int t)
 
 void Galaxy::ScatterYields(int time, int ringstart, int ringend)
 {
-	double absorbFrac =  1.0 - Param.Stellar.EjectionFraction;
+	// double absorbFrac =  1.0 - Param.Stellar.EjectionFraction;
+	double absorbFrac = 0.000000000001;
 
 	for (int t = 0; t <= time; ++t)
 	{
@@ -907,8 +908,8 @@ void Galaxy::ComputeVisibilityFunction()
 			}
 		}
 	}
-	maxMv = std::min(maxMv, 12.0); // stops excess computation of very dim stars
-	minMv = std::max(-3.0, minMv);
+	// maxMv = std::min(maxMv, 12.0); // stops excess computation of very dim stars
+	// minMv = std::max(-3.0, minMv);
 	Data.UrgentLog("\tThe stars in the galaxy range from Mv=" + std::to_string(minMv) + " ->  " + std::to_string(maxMv) + "\n");
 	DimmestStar = maxMv;
 	BrightestStar = minMv;
@@ -939,21 +940,31 @@ void Galaxy::StellarSynthesis(int ringstart, int ringend, int threadID)
 
 	for (int i = ringstart; i < ringend; ++i)
 	{
+		int stars_this_ring =0;
 		//~ std::cout << "Thread " << threadID << " at " << prog << std::endl;
 		int cTot = 0;
 		int cFilter = 0;
 		for (int j = 0; j < Rings.size(); ++j)
 		{
 
-			for (int t = 0; t < Param.Meta.SimulationSteps - 1; ++t)
+			for (int t = 0; t < Param.Meta.SimulationSteps -1; ++t)
 			{
 				double migrateFrac = Migrator[t].Grid[i][j];
+
+				int stars_this_loop = 0;
+				int accepted_this_loop = 0;
 				if (migrateFrac > 1e-8)
 				{
-					SynthesisOutput[i] += Rings[i].Synthesis(Rings[j].Stars.Population[t], migrateFrac, Rings[j].Radius, SynthesisProgress[threadID]);
+					SynthesisOutput[i] += Rings[i].Synthesis(Rings[j].Stars.Population[t], migrateFrac,Rings[j].Radius,SynthesisProgress[threadID], stars_this_loop);
+					
 				}
+				stars_this_ring += stars_this_loop;
+
+				
 			}
 		}
+
+		std::cout<< "Ring " << i << " synthesised " <<stars_this_ring << " stars "<<std::endl;
 
 		if (coreContainsSolar)
 		{

@@ -58,10 +58,20 @@ IsoMass &StellarPopulation::operator[](int i)
 	}
 }
 
-int StellarPopulation::FormStars(double formingMass, int timeIndex, GasReservoir &formingGas)
-{
+int StellarPopulation::FormStars(double formingMass, int timeIndex, GasReservoir &formingGas, int ringIndex)
+{	
+	
+	formingMass = 5e-5;
+	double formingFeH = -0.1 + 0.5/50 *ringIndex;
+	double formingMetallicity = 0.74 * pow(10,formingFeH - 1.60);
+	
+	formingGas.Wipe();
+	formingGas.Absorb(GasReservoir::Primordial(formingMass,Param));
+
+
 	double NStarsFormed = IMF.FormationCount(formingMass);
-	double formingMetallicity = formingGas.ColdGasMetallicity();
+	// double formingMetallicity = formingGas.ColdGasMetallicity();
+
 	double budget = 0;
 
 	BirthIndex = timeIndex;
@@ -300,7 +310,12 @@ std::string StellarPopulation::CatalogueHeaders()
 	}
 	return s;
 }
-std::string StellarPopulation::CatalogueEntry(std::vector<int> ns, int m, double currentRadius, double birthRadius) const
+
+
+std::string StellarPopulation::CatalogueEntry(std::vector<int> ns, 
+                                              int m, 
+											  double currentRadius, 
+											  double birthRadius) const
 {
 	int nManualEntries = 7;
 	std::vector<double> values(nManualEntries + PropertyCount + ElementCount - 1, 0.0);
@@ -339,7 +354,7 @@ std::string StellarPopulation::CatalogueEntry(std::vector<int> ns, int m, double
 	int eOffset = nManualEntries;
 	for (int i = 1; i < ElementCount; ++i)
 	{
-		typicalErrors[eOffset] = 0.02;
+		typicalErrors[eOffset] = 0.00;
 		++eOffset;
 	}
 	//~ typicalErrors[eOffset + Iron -1] = 0.04;

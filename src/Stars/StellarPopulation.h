@@ -36,7 +36,7 @@ class StellarPopulation
 		double Metallicity; 
 		int BirthIndex;
 		//!Returns the number of stars formed (spread across all mass grids)
-		int FormStars(double formingMass, int timeIndex, GasReservoir & formingGas);
+		int FormStars(double formingMass, int timeIndex, GasReservoir & formingGas, int ringIndex);
 		double Mass();
 		IsoMass & Relic();
 		const IsoMass & Relic() const;
@@ -52,6 +52,8 @@ class StellarPopulation
 		
 		std::string CatalogueHeaders();
 		std::string CatalogueEntry(std::vector<int> popEntry, int m, double currentRadius, double birthRadius) const;
+		// std::string CatalogueEntryNSD(std::vector<int> popEntry, int m, double currentRadius, double birthRadius) const;
+
 		double Age;
 	private:
 		const GlobalParameters & Param;
@@ -77,3 +79,4 @@ class StellarPopulation
 		
 		Gas TempGas;
 };
+

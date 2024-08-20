@@ -38,7 +38,7 @@ void Ring::TimeStep(int t)
 
 void Ring::MakeStars(int t)
 {
-	Stars.Form(Gas, CGMBuffer, t);
+	Stars.Form(Gas, CGMBuffer, t, RadiusIndex);
 }
 void Ring::KillStars(int time)
 {
@@ -245,65 +245,83 @@ void Ring::ComputeSelectionFunction(double minMv, double maxMv)
 
 	bool printy = (RadiusIndex == 40);
 
-	for (int t = 0; t < Nt; ++t)
+	if (Param.NuclearDisk.DoNuclearDisk)
 	{
-		double time = t * dt;
-		double zBar = z0 + kappa * pow(time, tauN);
-
-		for (int i = 0; i < Nm; ++i)
+		for (int t = 0; t < Nt; ++t)
 		{
-			double Mv = minMv + i * deltaM;
 
-			double maxDistance = pow(10, (4.0 - Mv) / 5);
-			double minDistance = pow(10, (2.0 - Mv) / 5);
-			double val = 0;
-			double normVal = 0;
-			for (int ri = 0; ri < Nr; ++ri)
+			for (int i = 0; i < Nm; ++i)
 			{
-				double r = Radius - Width / 2 + ri * dr;
-				double phiVal = 0;
-				for (int angle = 0; angle < Nphi; ++angle)
-				{
-					double phi = angle * dphi;
-
-					double inPlaneDistance = sqrt(dSol * dSol + r * r - 2 * dSol * r * cos(phi));
-
-					double s = 0;
-
-					if (inPlaneDistance <= maxDistance)
-					{
-						double dpSq = inPlaneDistance * inPlaneDistance;
-						double ell = asin(r / inPlaneDistance * sin(phi));
-
-						double zCut = inPlaneDistance * tan_SkyCut(ell);
-						double discCut_Degrees = 10.0;
-						double discCut = inPlaneDistance * tan(discCut_Degrees * M_PI / 180);
-
-						double upperCut = inPlaneDistance * tan(50.0 * M_PI / 180);
-
-						double bPlus = std::min(upperCut, sqrt(maxDistance * maxDistance - dpSq));
-						double aMinus = sqrt(std::max(minDistance * minDistance - dpSq, discCut * discCut));
-						double aPlus = std::min(zCut, bPlus);
-
-						if (aPlus > aMinus)
-						{
-							s += 0.5 * (exp(-aMinus / zBar) - exp(-aPlus / zBar));
-						}
-
-						double bMinus = abs(std::min(-aMinus, zCut));
-						if (bPlus > bMinus)
-						{
-							s += 0.5 * (exp(-bMinus / zBar) - exp(-bPlus / zBar));
-						}
-					}
-
-					phiVal += r * s * dr * dphi;
-					normVal += r * dr * dphi;
-				}
-				val += phiVal;
+				
+				SelectionGrid[t][i] = 1;
 			}
-			val /= normVal;
-			SelectionGrid[t][i] = val;
+		}
+	}
+
+	else
+	{
+
+
+		for (int t = 0; t < Nt; ++t)
+		{
+			double time = t * dt;
+			double zBar = z0 + kappa * pow(time, tauN);
+
+			for (int i = 0; i < Nm; ++i)
+			{
+				double Mv = minMv + i * deltaM;
+
+				double maxDistance = pow(10, (4.0 - Mv) / 5);
+				double minDistance = pow(10, (2.0 - Mv) / 5);
+				double val = 0;
+				double normVal = 0;
+				for (int ri = 0; ri < Nr; ++ri)
+				{
+					double r = Radius - Width / 2 + ri * dr;
+					double phiVal = 0;
+					for (int angle = 0; angle < Nphi; ++angle)
+					{
+						double phi = angle * dphi;
+
+						double inPlaneDistance = sqrt(dSol * dSol + r * r - 2 * dSol * r * cos(phi));
+
+						double s = 0;
+
+						if (inPlaneDistance <= maxDistance)
+						{
+							double dpSq = inPlaneDistance * inPlaneDistance;
+							double ell = asin(r / inPlaneDistance * sin(phi));
+
+							double zCut = inPlaneDistance * tan_SkyCut(ell);
+							double discCut_Degrees = 10.0;
+							double discCut = inPlaneDistance * tan(discCut_Degrees * M_PI / 180);
+
+							double upperCut = inPlaneDistance * tan(50.0 * M_PI / 180);
+
+							double bPlus = std::min(upperCut, sqrt(maxDistance * maxDistance - dpSq));
+							double aMinus = sqrt(std::max(minDistance * minDistance - dpSq, discCut * discCut));
+							double aPlus = std::min(zCut, bPlus);
+
+							if (aPlus > aMinus)
+							{
+								s += 0.5 * (exp(-aMinus / zBar) - exp(-aPlus / zBar));
+							}
+
+							double bMinus = abs(std::min(-aMinus, zCut));
+							if (bPlus > bMinus)
+							{
+								s += 0.5 * (exp(-bMinus / zBar) - exp(-bPlus / zBar));
+							}
+						}
+
+						phiVal += r * s * dr * dphi;
+						normVal += r * dr * dphi;
+					}
+					val += phiVal;
+				}
+				val /= normVal;
+				SelectionGrid[t][i] = val;
+			}
 		}
 	}
 }
@@ -337,7 +355,14 @@ double Ring::SelectionEffect(double Mv, double age)
 	return val;
 }
 
-std::string Ring::Synthesis(const StellarPopulation &targetPopulation, double migrateFrac, double originRadius, double &totalSynthesised)
+
+
+
+std::string Ring::Synthesis(const StellarPopulation &targetPopulation, 
+							double migrateFrac, 
+							double originRadius, 
+							double &totalSynthesised, 
+							int &stars_this_ring)
 {
 	std::string output = "";
 	double age = targetPopulation.Age;
@@ -363,6 +388,21 @@ std::string Ring::Synthesis(const StellarPopulation &targetPopulation, double mi
 
 				double obs = observeFrac * count * crowdingFactor;
 
+
+				if(Param.NuclearDisk.DoNuclearDisk)
+				{//multiply by factor to reduce observations
+
+					double LogL = iso.Value(entry, logL);
+
+					// if (LogL < 2)
+					// {
+					// 	obs =0;
+					// }
+
+					double obsProb = 1;	
+					obs *= obsProb;
+				}
+
 				int intObs = obs;
 
 				double targetRoll = (obs - intObs);
@@ -375,13 +415,18 @@ std::string Ring::Synthesis(const StellarPopulation &targetPopulation, double mi
 				totalObs += intObs;
 			}
 
+
 			if (totalObs > 0)
 			{
 				output += targetPopulation.CatalogueEntry(numberSynthesised, m, Radius, originRadius);
 				//~ SynthesisOutput[i] += output;
 				totalSynthesised += totalObs;
 			}
+
+			stars_this_ring += totalObs;
+
 		}
 	}
 	return output;
 }
+

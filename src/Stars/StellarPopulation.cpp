@@ -58,8 +58,9 @@ IsoMass &StellarPopulation::operator[](int i)
 	}
 }
 
-int StellarPopulation::FormStars(double formingMass, int timeIndex, GasReservoir &formingGas)
-{
+int StellarPopulation::FormStars(double formingMass, int timeIndex, GasReservoir &formingGas, int ringIndex)
+{	
+	
 	double NStarsFormed = IMF.FormationCount(formingMass);
 	double formingMetallicity = formingGas.ColdGasMetallicity();
 	double budget = 0;
@@ -300,7 +301,12 @@ std::string StellarPopulation::CatalogueHeaders()
 	}
 	return s;
 }
-std::string StellarPopulation::CatalogueEntry(std::vector<int> ns, int m, double currentRadius, double birthRadius) const
+
+
+std::string StellarPopulation::CatalogueEntry(std::vector<int> ns, 
+                                              int m, 
+											  double currentRadius, 
+											  double birthRadius) const
 {
 	int nManualEntries = 7;
 	std::vector<double> values(nManualEntries + PropertyCount + ElementCount - 1, 0.0);

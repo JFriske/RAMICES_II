@@ -123,9 +123,9 @@ void NuclearDisk::Infall(double t, int timestep)
 
 		double onfallreq = target - (Rings[i].Gas.ColdMass());
 
-		if(i< Rings.size() -1){
-		std::cout<<"Time "<< t<<" Ring "<< i << " frac ring+1 "<< massouterring << " mass ring+1 "<< Rings[i+1].Gas.ColdMass()<< " inflow " <<  required << " onfall bef " << onfallreq;
-		}
+		// if(i< Rings.size() -1){
+		// std::cout<<"Time "<< t<<" Ring "<< i << " frac ring+1 "<< massouterring << " mass ring+1 "<< Rings[i+1].Gas.ColdMass()<< " inflow " <<  required << " onfall bef " << onfallreq;
+		// }
 
 
 		// inflow only in nuclear disk are if inflow active
@@ -153,10 +153,10 @@ void NuclearDisk::Infall(double t, int timestep)
 				onfallreq *= (r_current - minonfalldistance) / (maxonfalldistance - minonfalldistance);
 			}
 		}
-		if(i< Rings.size() -1){
+		// if(i< Rings.size() -1){
 
-			std::cout<< " onfall after " << onfallreq << "\n";
-		}
+		// 	std::cout<< " onfall after " << onfallreq << "\n";
+		// }
 
 		InsertInfallingGasOnfall(i, onfallreq, Rd);
 

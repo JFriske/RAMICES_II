@@ -34,9 +34,15 @@ class Ring
 		
 		double SelectionEffect(double Mv, double age);
 		
+		// void ComputeSelectionFunctionNSD(const double brightLimit, const double dimLimit);
 		void ComputeSelectionFunction(const double brightLimit, const double dimLimit);
 		void MetCheck(const std::string & location);
-		std::string Synthesis(const StellarPopulation & targetPopulation, double migrationFraction, double originRadius, double & totalSynthesised);
+		std::string Synthesis(const StellarPopulation & targetPopulation, 
+							  double migrationFraction, 
+							  double originRadius, 
+							  double & totalSynthesised,
+							  int &stars_this_ring);
+		
 	private:
 		
 		//~ std::vector<GasReservoir> PreviousEnrichment;

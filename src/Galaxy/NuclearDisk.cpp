@@ -50,6 +50,139 @@ void NuclearDisk::Evolve()
 	}
 }
 
+
+
+void NuclearDisk::SynthesiseObservations()
+{
+
+	ParallelBars = 0;
+	Data.UrgentLog("\tWrite out Population MakeUp:   ");
+
+
+	// giving the populations their right age
+	for (int t = 0; t < Param.Meta.SimulationSteps -1; ++t)
+	{
+		double age = (Param.Meta.SimulationSteps - 2 - t) * Param.Meta.TimeStep;			
+		for (int j = 0; j < Rings.size(); ++j)
+		{
+			Rings[j].Stars.Population[t].Age = age;
+		}
+				
+	}
+	
+
+
+	SynthesisOutput.resize(Rings.size());
+
+
+	// TODO eventually reuse the code from galaxy?
+
+	int nOperations = Rings.size();
+
+	int N = Param.Meta.ParallelThreads;
+	int chunkDivisor = ceil((double)nOperations / N);
+	int start = 0;
+	int end = 0;
+
+	int n = 0;
+
+	while (n < N - 1 && end < nOperations)
+	{
+		start = n * chunkDivisor;
+		end = std::min(start + chunkDivisor, nOperations);
+		// std::cout << "\tSending " << start << "->" << end << " to worker " << n << std::endl;
+		
+		Threads[n] = std::thread(&NuclearDisk::StellarSynthesis, this, start, end, n);
+
+		++n;
+	}
+	start = end;
+	end = nOperations;
+	// std::cout << "I am working on the final set : " << start << "->" << end << std::endl;
+	
+	StellarSynthesis(start, end, N - 1);
+		
+	int joined = 0;
+
+	while (joined < n)
+	{
+		for (int nn = 0; nn < n; ++nn)
+		{
+			if (Threads[nn].joinable())
+			{
+				Threads[nn].join();
+				++joined;
+			}
+		}
+	}
+
+	// LaunchParallelOperation(Param.Meta.SimulationDuration, Rings.size(), Synthesis);
+
+	// int nSynth = 0;
+	// for (int i = 0; i < SynthesisProgress.size(); ++i)
+	// {
+	// 	nSynth += SynthesisProgress[i];
+	// }
+	// Data.UrgentLog("\t\t" + std::to_string(nSynth) + " stars were synthesised\n");
+
+	Data.UrgentLog("\tWriting to file.");
+
+
+
+
+	JSL::initialiseFile(Param.Output.StarFile.Value);
+	JSL::writeStringToFile(Param.Output.StarFile.Value, Rings[0].Stars.Population[0].DistributionHeaders() + "\n");
+	int bars = 0;
+	for (int i = 0; i < Rings.size(); ++i)
+	{
+		JSL::writeStringToFile(Param.Output.StarFile.Value, SynthesisOutput[i]);
+		Data.ProgressBar(bars, i, Rings.size());
+	}
+}
+
+
+void NuclearDisk::StellarSynthesis(int ringstart, int ringend, int threadID)
+//this is actually a population/distribution synthesis
+{
+	bool coreContainsRing1 = (ringstart < 1) && (ringend - 1 > 1);
+	int prog = 0;
+	for (int i = ringstart; i < ringend; ++i)
+	{
+		// std::cout << "Thread " << threadID << " at " << prog << std::endl;
+		int cTot = 0;
+		int cFilter = 0;
+		for (int j = 0; j < Rings.size(); ++j)
+		{
+
+			for (int t = 0; t < Param.Meta.SimulationSteps -1; ++t)
+			{
+				double migrateFrac = Migrator[t].Grid[i][j];
+				if (migrateFrac > 1e-8)
+				{
+					// std::cout << "Thread "<< threadID<< " Ring " << i << " Migration from " << j << " at time " << t << " with frac " << migrateFrac << std::endl;	
+					if (i == 10 && t == 500){
+						std::cout<< "Ring " << i << "  " << j << " " << t << " " << migrateFrac << " "<<Rings[j].Stars.Population[t].FormingMass<< std::endl;
+					}
+					SynthesisOutput[i] += Rings[i].SynthesisDistribution(Rings[j].Stars.Population[t], migrateFrac,Rings[j].Radius,SynthesisProgress[threadID]);
+					
+					// std::cout << "Thread "<< threadID<< " Ring " << i << " Migration from " << j << " at time " << t << " with frac " << migrateFrac << " done" << std::endl;
+				}
+				
+			}
+		}
+
+		if (coreContainsRing1)
+		{
+			Data.ProgressBar(prog, i - ringstart, ringend - ringstart);
+		}
+	}
+}
+
+
+
+
+
+
 /* separate Inflow and Onfall
 If inflow flag is set, first calculate inflow through disk and then add onfall at the nuclear ring area
 If inflow flag is off, achieve predicted surface density by onfall alone

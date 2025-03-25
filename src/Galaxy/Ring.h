@@ -42,6 +42,11 @@ class Ring
 							  double originRadius, 
 							  double & totalSynthesised,
 							  int &stars_this_ring);
+
+		std::string SynthesisDistribution(const StellarPopulation & targetPopulation, 
+								double migrationFraction, 
+								double originRadius, 
+								double & totalSynthesised);
 		
 	private:
 		

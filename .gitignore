@@ -43,3 +43,5 @@ RAMICES_II*
 Testing/metplanesNucDiskNoAGB.pdf
 Testing/NucDiskGradientNucDiskNoAGB.pdf
 
+*.pkl
+

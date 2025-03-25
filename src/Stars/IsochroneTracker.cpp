@@ -44,6 +44,45 @@ void IsochroneTracker::Construct()
 	}
 	IsoLog("\tSorted Isochrones by metallicity");
 
+	// Write grid data to a CSV file
+	std::string IsochroneGrid(Param.Output.Root.Value + "/IsochroneGrid.csv");
+	JSL::initialiseFile(IsochroneGrid);
+	std::stringstream output;
+	
+	// Write header line: mass, metallicity, time and all property columns
+	output << "Mass,Metallicity,Time,";
+	for (int p = 0; p < PropertyCount; ++p)
+	{
+		output << PropertyNames[p] <<",";
+	}
+	output << "\n";
+
+	// Iterate over the grid dimensions: mass, metallicity (sorted) and time
+	for (size_t m = 0; m < Grid.size(); ++m)
+	{
+		double mass = Param.Stellar.MassGrid[m];
+		for (size_t z = 0; z < Grid[m].size(); ++z)
+		{
+			double metallicity = CapturedZs[z];
+			for (size_t t = 0; t < Grid[m][z].size(); ++t)
+			{
+				// Assume that the time index in Grid[m][z] matches the entry in CapturedTs.
+				double time = CapturedTs[t];
+				
+				output << mass << "," << metallicity << "," << time;
+				// Write out all properties for this IsochroneEntry
+				for (int p = 0; p < PropertyCount; ++p)
+				{
+					output << "," << Grid[m][z][t].Properties[p];
+				}
+				output << "\n";
+			}
+		}
+	}
+	JSL::writeStringToFile(IsochroneGrid, output.str());
+	IsoLog("Grid successfully written to IsochroneGrid.csv");
+		
+
 	//check temporal grid for uniformity
 	isTimeLogUniform = true;
 	DeltaLogT = CapturedTs[1] - CapturedTs[0];

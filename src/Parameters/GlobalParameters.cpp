@@ -34,4 +34,22 @@ void GlobalParameters::SaveInputs()
 	}
 	// JSL::initialiseFile(configOut);
 	JSL::writeStringToFile(configOut, output.str());
+
+
+	//~ write out massgrid 
+	
+	std::string MassGridFile = Output.Root.Value + "/Massgrid.dat";
+	JSL::initialiseFile(MassGridFile);
+	std::stringstream output ;
+	output << "min_value,median_value,max_value\n";
+	
+	for (int i = 0; i < Stellar.MassResolution; ++i)
+	{
+		double x = Stellar.MassGrid[i];
+		double w = Stellar.MassDeltas[i];
+
+		output << x- 0.5*w << ","  << x<< "," << x + 0.5*w << "\n";
+	}
+	
+	JSL::writeStringToFile(MassGridFile, output.str());
 }

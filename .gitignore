@@ -40,8 +40,9 @@ RAMICES_II*
 *config/NucDiskOldParams/*
 *checkpoint.ipynb
 *Untitled.ipynb*
-Testing/metplanesNucDiskNoAGB.pdf
-Testing/NucDiskGradientNucDiskNoAGB.pdf
 
 *.pkl
+
+## For now, ignore files in the Testing directory
+Testing/*
 

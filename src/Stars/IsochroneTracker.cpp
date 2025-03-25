@@ -43,7 +43,7 @@ void IsochroneTracker::Construct()
 		}
 	}
 	IsoLog("\tSorted Isochrones by metallicity");
-	
+
 	//check temporal grid for uniformity
 	isTimeLogUniform = true;
 	DeltaLogT = CapturedTs[1] - CapturedTs[0];
@@ -233,7 +233,7 @@ void IsochroneTracker::ParseFile(std::string file)
 			
 			
 			int flag = std::stoi(FILE_LINE_VECTOR[9]);
-			if (flag < 8)
+			if (flag < 9) //flag 8 is TPRGB, previously was at < 8 
 			{
 				for (int k = 0; k < PropertyCount; ++k)
 				{
@@ -253,7 +253,7 @@ void IsochroneTracker::ParseFile(std::string file)
 					
 					NewIso = PrevIso;
 					
-					
+
 					
 					for (int k = 0; k < PropertyCount; ++k)
 					{

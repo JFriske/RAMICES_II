@@ -7,17 +7,20 @@ GlobalParameters::GlobalParameters()
 
 void GlobalParameters::Initialise(int argc, char *argv[])
 {
+	
 	for (int i = 0; i < ParamMembers.size(); ++i)
 	{
 		ParamMembers[i]->Configure(argc, argv);
 	}
-
-	SaveInputs();
-
+	
+	
 	for (int i = 0; i < ParamMembers.size(); ++i)
 	{
 		ParamMembers[i]->Initialise(Resources.ResourceRoot);
 	}
+
+	SaveInputs();
+
 }
 
 void GlobalParameters::SaveInputs()
@@ -35,12 +38,12 @@ void GlobalParameters::SaveInputs()
 	// JSL::initialiseFile(configOut);
 	JSL::writeStringToFile(configOut, output.str());
 
+	output.str("");
 
 	//~ write out massgrid 
 	
 	std::string MassGridFile = Output.Root.Value + "/Massgrid.dat";
 	JSL::initialiseFile(MassGridFile);
-	std::stringstream output ;
 	output << "min_value,median_value,max_value\n";
 	
 	for (int i = 0; i < Stellar.MassResolution; ++i)

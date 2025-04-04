@@ -13,6 +13,11 @@ abbrev = 'SanityChecks/'+ sys.argv[1] #"NucSynthOnfall"
 
 number_workers = 15
 
+min_logL = 1 #None #log10(L/L_sun)
+
+
+isochrone_path = './Resources/Isochrones/NewIsochroneChabrier/'
+
 
 
 def find_closest_isochrone(row, padova, age_epsilon=1e-9, met_epsilon=1e-9):
@@ -44,7 +49,7 @@ def weigh_isochrones(row, padova):
     isochrone = find_closest_isochrone(row, padova).copy()
 
     isochrone['weight'] = isochrone['IMF'] *row['PopulationMass']*1e9
-    isochrone['Nstars'] = isochrone['weight']/isochrone['Mini']
+    # isochrone['Nstars'] = isochrone['weight']/isochrone['Mini']
 
     isochrone['Radius'] = row['Radius']
     isochrone['BirthRadius'] = row['BirthRadius']
@@ -63,66 +68,99 @@ def weigh_isochrones(row, padova):
     isochrone['CrH'] = row['CrH']
     isochrone['CoH'] = row['CoH']
     isochrone['EuH'] = row['EuH']
-    isochrone['LogAge'] = row['LogAge']
+    isochrone['R2Age'] = row['TrueAge']
   
 
     return isochrone
 
 
+def make_isochrone_catalogue(min_logL=None):
+    cols =["Zini","MH","logAge","Mini","int_IMF","Mass","logL","logTe","logg","label","McoreTP","C_O","period0","period1","period2","period3","period4","pmode","Mloss","tau1m","X","Y","Xc","Xn","Xo","Cexcess","Z","mbolmag","Umag","Bmag","Vmag","Rmag","Imag","Jmag","Hmag","Kmag"]
+
+    # Gather all isochorne .dat files
+    files_newpadova = sorted(glob.glob(isochrone_path + '/*.dat'))
+
+    # Load each file into a DataFrame and collect them in a list
+    dfs = []
+    for filename in files_newpadova:
+        data = np.loadtxt(filename)
+        df_temp = pd.DataFrame(data, columns=cols)
+        dfs.append(df_temp)
+
+    # Concatenate all DataFrames into one
+    padova = pd.concat(dfs, ignore_index=True)
+
+    padova = padova.sort_values(by=['logAge', 'Zini']).reset_index(drop=True)
+
+    padova['Age'] = 10**padova['logAge'] / 1e9
+
+    # get the IMF from the integrated IMF
+    padova['IMF_diff'] = padova['int_IMF'].diff()
+    # Take care of the first entry in a new isochrone
+    padova['IMF'] = padova['IMF_diff'].where(padova['IMF_diff'] >= 0, padova['int_IMF'])
+
+    # For the very first row, diff() yields NaN, so also set it to its own int_IMF:
+    first_idx = padova.index[0]
+    padova.loc[first_idx, 'IMF'] = padova.loc[first_idx, 'int_IMF']
+
+    zero_mask = padova['IMF'] == 0
+
+    ## padove isochrones have several points where the IMF has the same value. 
+    # This happens at quickly evolving states, where we want to keep all points.
+    # As our precision is bigger than isochrone one, we can distribute the IMF value over the zero points.
+     
+    # Identify contiguous blocks among the zeros using a vectorized group marker.
+    group_ids = (zero_mask != zero_mask.shift(1)).cumsum()
+
+    # For each contiguous group of zeros, look for the row immediately preceding the block,
+    # then distribute its IMF value over (1 + number of rows in the zero block).
+    for _, group in padova[zero_mask].groupby(group_ids[zero_mask]):
+        first_zero_idx = group.index[0]
+        # Only proceed if there is a preceding row and it is nonzero.
+        if first_zero_idx == 0:
+            warnings.warn("The very first entry had IMF = 0 - something went wrong.")
+            continue
+        if padova.at[first_zero_idx - 1, 'IMF'] == 0:
+            warnings.warn("The value before the group was 0 too - something went wrong.")
+            continue
+        # Include the preceding row in the distribution.
+        group_indices = [first_zero_idx - 1] + list(group.index)
+        total_count = len(group_indices)
+        preceding_value = padova.at[first_zero_idx - 1, 'IMF']
+        new_value = preceding_value / total_count
+        padova.loc[group_indices, 'IMF'] = new_value
 
 
-ddf = pd.read_csv('./Output/' +abbrev+ '/StellarCatalogue.dat', sep=', ')
+        # padova.drop(padova[padova['IMF'] == 0].index, inplace=True)
+
+
+    padova.drop([ 'McoreTP', 'C_O', 'period0', 'period1', 'period2',
+        'period3', 'period4', 'pmode', 'Mloss', 'tau1m', 'X', 'Y', 'Xc', 'Xn',
+        'Xo', 'Cexcess', 'IMF_diff'], inplace = True, axis = 1)
+
+    #drop post AGB isochrone points
+    padova.drop(padova[padova['label'] == 9].index, inplace=True)
+
+    # drop all entries definitely not in the selction function
+    if min_logL is not None:
+        padova.drop(padova[padova['logL'] <min_logL].index, inplace=True)
+
+    return padova
+
+
+
+
+ddf = pd.read_csv('./Output/' +abbrev+ '/StellarCatalogue.dat', sep=', ', engine ='python')
 
 ddf.drop(ddf.PopulationMass[ddf.PopulationMass == 0].index, inplace=True)
 
+ddf.loc[ddf['TrueAge'] == 0, 'TrueAge'] = 0.001
 ddf['LogAge']  = np.log10(ddf['TrueAge']*1e9)
 
+padova = make_isochrone_catalogue(min_logL=min_logL)
 
 
-
-cols =["Zini","MH","logAge","Mini","int_IMF","Mass","logL","logTe","logg","label","McoreTP","C_O","period0","period1","period2","period3","period4","pmode","Mloss","tau1m","X","Y","Xc","Xn","Xo","Cexcess","Z","mbolmag","Umag","Bmag","Vmag","Rmag","Imag","Jmag","Hmag","Kmag"]
-
-# Gather all isochorne .dat files
-files_newpadova = sorted(glob.glob('./Resources/Isochrones/NewPadova/*.dat'))
-files_padovafiles = sorted(glob.glob('./Resources/Isochrones/PadovaFiles/*.dat'))
-
-# Load each file into a DataFrame and collect them in a list
-dfs = []
-for filename in files_newpadova + files_padovafiles:
-    data = np.loadtxt(filename)
-    df_temp = pd.DataFrame(data, columns=cols)
-    dfs.append(df_temp)
-
-# Concatenate all DataFrames into one
-padova = pd.concat(dfs, ignore_index=True)
-
-padova = padova.sort_values(by=['logAge', 'Zini']).reset_index(drop=True)
-
-
-padova['Age'] = 10**padova['logAge'] / 1e9
-
-# get the IMF from the integrated IMF
-padova['IMF_diff'] = padova['int_IMF'].diff()
-# Take care of the first entry in a new isochrone
-padova['IMF'] = padova['IMF_diff'].where(padova['IMF_diff'] >= 0, padova['int_IMF'])
-
-# For the very first row, diff() yields NaN, so also set it to its own int_IMF:
-first_idx = padova.index[0]
-padova.loc[first_idx, 'IMF'] = padova.loc[first_idx, 'int_IMF']
-
-padova.drop(padova[padova['IMF'] == 0].index, inplace=True)
-
-
-padova.drop([ 'McoreTP', 'C_O', 'period0', 'period1', 'period2',
-       'period3', 'period4', 'pmode', 'Mloss', 'tau1m', 'X', 'Y', 'Xc', 'Xn',
-       'Xo', 'Cexcess', 'IMF_diff'], inplace = True, axis = 1)
-
-#drop post AGB isochrone points
-padova.drop(padova[padova['label'] == 9].index, inplace=True)
-
-
-
-## actually run the isochonre functions
+## actually run the isochrone functions
 rows = ddf.to_dict(orient='records')
 
 def process_row(row_dict):

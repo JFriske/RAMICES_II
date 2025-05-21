@@ -15,6 +15,8 @@ number_workers = 15
 
 min_logL = 1 #None #log10(L/L_sun)
 
+timeres = 0.01 # timestep of resolution
+
 
 isochrone_path = './Resources/Isochrones/NewIsochroneChabrier/'
 
@@ -48,6 +50,8 @@ def weigh_isochrones(row, padova):
     
     isochrone = find_closest_isochrone(row, padova).copy()
 
+    # populationMass is in units of 1e9 Msun, neeed to convert it to Msun. 
+    # Then IMF*PopulationMass gives the number of stars in this isochrone point
     isochrone['weight'] = isochrone['IMF'] *row['PopulationMass']*1e9
     # isochrone['Nstars'] = isochrone['weight']/isochrone['Mini']
 
@@ -96,15 +100,24 @@ def make_isochrone_catalogue(min_logL=None):
 
     # get the IMF from the integrated IMF
     padova['IMF_diff'] = padova['int_IMF'].diff()
+    
     # Take care of the first entry in a new isochrone
-    padova['IMF'] = padova['IMF_diff'].where(padova['IMF_diff'] >= 0, padova['int_IMF'])
+    # there are a few entries in IMF where int_IMF is not monotonous
+    # set IMF_diff to 0 there
+    padova.loc[(padova['IMF_diff']<0) & (padova['IMF_diff']>-0.2), 'IMF_diff'] = 0
+
+    # remaining negative IMF must be from new isochrones
+    padova['IMF'] = padova['IMF_diff'].where(padova['IMF_diff'] >= -0.2, padova['int_IMF'])
 
     # For the very first row, diff() yields NaN, so also set it to its own int_IMF:
     first_idx = padova.index[0]
     padova.loc[first_idx, 'IMF'] = padova.loc[first_idx, 'int_IMF']
 
-    zero_mask = padova['IMF'] == 0
+    if(np.any(padova['IMF'] < 0)):
+        warnings.warn('IMF value < 0 for some stars.')
 
+
+    zero_mask = padova['IMF'] == 0
     ## padove isochrones have several points where the IMF has the same value. 
     # This happens at quickly evolving states, where we want to keep all points.
     # As our precision is bigger than isochrone one, we can distribute the IMF value over the zero points.
@@ -154,7 +167,19 @@ ddf = pd.read_csv('./Output/' +abbrev+ '/StellarCatalogue.dat', sep=', ', engine
 
 ddf.drop(ddf.PopulationMass[ddf.PopulationMass == 0].index, inplace=True)
 
-ddf.loc[ddf['TrueAge'] == 0, 'TrueAge'] = 0.001
+mask = ddf['TrueAge'] == 0
+new_rows = []
+for _, row in ddf[mask].iterrows():
+    new_ages = np.linspace(0 * timeres, 1 * timeres, 10, endpoint=True)
+    for age in new_ages:
+        new_row = row.copy()
+        new_row['TrueAge'] = age
+        new_row['PopulationMass'] = new_row['PopulationMass'] / 10
+        new_rows.append(new_row)
+# Remove original zero TrueAge rows and add the new ones
+ddf = pd.concat([ddf[~mask], pd.DataFrame(new_rows)], ignore_index=True)
+ddf.loc[ddf['TrueAge'] == 0, 'TrueAge'] = 0.00001
+
 ddf['LogAge']  = np.log10(ddf['TrueAge']*1e9)
 
 padova = make_isochrone_catalogue(min_logL=min_logL)

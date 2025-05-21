@@ -11,7 +11,6 @@ public:
     // NuclearDisk(InitialisedData & Data);
     using Galaxy::Galaxy;
     
-    void SynthesiseObservations();
     void Evolve();
 
 private:
@@ -35,8 +34,6 @@ private:
     void CGM_SaveChemicalHistory(int t, std::stringstream &absoluteStreamCold, std::stringstream &logarithmicStreamCold, std::stringstream &absoluteStreamHot, std::stringstream &logarithmicStreamHot);
 
     void SaveState_CGM(double t, bool early);
-
-    void StellarSynthesis(int ringstart, int ringend, int threadID);
 
 
     void checkTimeResolution(std::string galaxyFileCold, std::string galaxyFileHot);

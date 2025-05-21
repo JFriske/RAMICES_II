@@ -56,7 +56,10 @@ public:
 	//! The ring-star data identifier
 	Argument<std::string> StarFile = Argument<std::string>("StellarCatalogue.dat", "ring-data-stars");
 
-	//! The enrichment file identifier
+	//! Output file for the stellar populations
+	Argument<std::string> PopFile = Argument<std::string>("PopulationCatalogue.dat","population-file");
+	
+		//! The enrichment file identifier
 	Argument<std::string> ChemicalPrefactor = Argument<std::string>("Enrichment_", "enrichment-base");
 
 	//! The cold gas filename
@@ -371,7 +374,9 @@ public:
 class CatalogueValues : public ParamList
 {
 public:
-	Argument<bool> SynthesisActive = Argument<bool>(true, "stellar-synthesis");
+	Argument<bool> StellarSynthesisActive = Argument<bool>(true, "stellar-synthesis");
+
+	Argument<bool> PopulationSynthesisActive = Argument<bool>(true,"population-synthesis");
 
 	//! The timesteps used to interpolate isochrones over
 	Argument<double> IsochroneTimeStep = Argument<double>(0.1, "isochrone-dt");
@@ -392,7 +397,7 @@ public:
 	//! Boring constructor -- slots in the relevant arguments into the ParamList::argPointer array
 	CatalogueValues()
 	{
-		argPointers = {&SynthesisActive, &IsochroneTimeStep, &IsochroneMagnitudeResolution, &SolarRadius, &RadialResolution, &AzimuthalResolution, &VerticalHeightStart, &VerticalHeightScaling, &VerticalHeightPower};
+		argPointers = {&StellarSynthesisActive, &PopulationSynthesisActive, &IsochroneTimeStep, &IsochroneMagnitudeResolution, &SolarRadius, &RadialResolution, &AzimuthalResolution, &VerticalHeightStart, &VerticalHeightScaling, &VerticalHeightPower};
 	}
 };
 
